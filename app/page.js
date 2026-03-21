@@ -1,4 +1,47 @@
+'use client';
+
+import { useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 export default function Home() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async () => {
+    if (!email || !email.includes('@')) {
+      setStatus('error');
+      setMessage('请输入有效的邮箱地址');
+      return;
+    }
+
+    setStatus('loading');
+
+    const { error } = await supabase
+      .from('waitlist')
+      .insert([{ email }]);
+
+    if (error) {
+      if (error.code === '23505') {
+        // 唯一约束冲突，邮箱已存在
+        setStatus('error');
+        setMessage('这个邮箱已经在名单里了 😊');
+      } else {
+        setStatus('error');
+        setMessage('提交失败，请稍后再试');
+      }
+    } else {
+      setStatus('success');
+      setMessage('🎉 已加入！我们会第一时间通知你');
+      setEmail('');
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
       {/* 导航栏 */}
@@ -7,7 +50,10 @@ export default function Home() {
           <span className="text-2xl font-bold text-blue-400">悟流</span>
           <span className="text-lg text-slate-400">WuFlow</span>
         </div>
-        <button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors">
+        <button
+          onClick={() => document.getElementById('waitlist-input').focus()}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors"
+        >
           提前加入
         </button>
       </nav>
@@ -24,16 +70,38 @@ export default function Home() {
           悟流 WuFlow 是专为跨界自学者打造的 AI 学习加速工具。
           把散乱的资料变成结构化知识，把重复的文档工作自动化。
         </p>
+
+        {/* 邮件提交区 */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <input
+            id="waitlist-input"
             type="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setStatus('idle');
+              setMessage('');
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             placeholder="输入你的邮箱，提前加入等待名单"
-            className="bg-slate-700 border border-slate-600 text-white px-6 py-3 rounded-full w-full sm:w-96 focus:outline-none focus:border-blue-400"
+            disabled={status === 'loading' || status === 'success'}
+            className="bg-slate-700 border border-slate-600 text-white px-6 py-3 rounded-full w-full sm:w-96 focus:outline-none focus:border-blue-400 disabled:opacity-50"
           />
-          <button className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-medium transition-colors whitespace-nowrap">
-            加入等待名单 →
+          <button
+            onClick={handleSubmit}
+            disabled={status === 'loading' || status === 'success'}
+            className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-full font-medium transition-colors whitespace-nowrap"
+          >
+            {status === 'loading' ? '提交中...' : status === 'success' ? '已加入 ✓' : '加入等待名单 →'}
           </button>
         </div>
+
+        {/* 状态提示 */}
+        {message && (
+          <p className={`mt-4 text-sm ${status === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+            {message}
+          </p>
+        )}
       </section>
 
       {/* 三大功能 */}
