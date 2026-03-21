@@ -1,22 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+const initSupabase = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (!url || !key) {
+    console.error('Missing Supabase environment variables');
+    return null;
+  }
+  
+  return createClient(url, key);
+};
+
+const supabase = initSupabase();
 
 export default function Home() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [message, setMessage] = useState('');
+  const inputRef = useRef(null);
+
+  // 简单的邮箱验证
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = async () => {
-    if (!email || !email.includes('@')) {
+    const trimmedEmail = email.trim();
+    
+    if (!trimmedEmail || !isValidEmail(trimmedEmail)) {
       setStatus('error');
       setMessage('请输入有效的邮箱地址');
+      return;
+    }
+
+    if (!supabase) {
+      setStatus('error');
+      setMessage('系统错误，请稍后重试');
       return;
     }
 
@@ -24,7 +48,7 @@ export default function Home() {
 
     const { error } = await supabase
       .from('waitlist')
-      .insert([{ email }]);
+      .insert([{ email: trimmedEmail }]);
 
     if (error) {
       if (error.code === '23505') {
@@ -51,7 +75,7 @@ export default function Home() {
           <span className="text-lg text-slate-400">WuFlow</span>
         </div>
         <button
-          onClick={() => document.getElementById('waitlist-input').focus()}
+          onClick={() => inputRef.current?.focus()}
           className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium transition-colors"
         >
           提前加入
@@ -74,7 +98,7 @@ export default function Home() {
         {/* 邮件提交区 */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <input
-            id="waitlist-input"
+            ref={inputRef}
             type="email"
             value={email}
             onChange={(e) => {
