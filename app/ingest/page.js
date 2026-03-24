@@ -22,7 +22,10 @@ export default function IngestPage() {
   };
 
   const handleSubmit = async () => {
-    const trimmed = url.trim();
+    let trimmed = url.trim();
+    if (trimmed && !trimmed.startsWith('http')) {
+        trimmed = 'https://' + trimmed;
+}
     if (!trimmed || !isValidUrl(trimmed)) {
       setStatus('error');
       setErrorMsg('请输入有效的网页链接，例如 https://example.com/article');
