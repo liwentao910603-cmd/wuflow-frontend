@@ -67,7 +67,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+    <main className="min-h-screen bg-linear-to-b from-slate-900 to-slate-800 text-white">
       {/* 导航栏 */}
       <nav className="flex items-center justify-between px-8 py-6 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
