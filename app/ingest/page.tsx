@@ -39,180 +39,233 @@ export default function IngestPage() {
   }
 
   return (
-    <main style={s.page}>
-      <style>{`@keyframes wf-spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={s.wrap}>
+    <div style={s.page}>
+      <style>{`
+        @keyframes wf-spin { to { transform: rotate(360deg) } }
+        @keyframes wf-slide { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+        * { box-sizing: border-box; }
+        input:focus, textarea:focus { outline: none; border-color: #2383E2 !important; box-shadow: 0 0 0 2px rgba(35,131,226,0.15); }
+        button:hover:not(:disabled) { opacity: 0.85; }
+        a:hover { opacity: 0.7; }
+      `}</style>
 
+      {/* Nav */}
+      <nav style={s.nav}>
+        <div style={s.navInner}>
+          <a href="/" style={s.brand}>
+            <span style={s.brandIcon}>悟</span>
+            <span style={s.brandName}>WuFlow</span>
+          </a>
+          <div style={s.navLinks}>
+            <span style={{ ...s.navLink, ...s.navActive }}>整理资料</span>
+            <a href="/qa" style={s.navLink}>知识库问答</a>
+          </div>
+        </div>
+      </nav>
+
+      <main style={s.main}>
+        {/* Hero */}
         <div style={s.hero}>
-          <span style={s.logo}>悟流 WuFlow</span>
           <h1 style={s.h1}>一键整理资料</h1>
           <p style={s.sub}>粘贴任意文章链接，AI 自动生成结构化学习笔记</p>
         </div>
 
-        <div style={s.inputRow}>
-          <input
-            style={s.input}
-            type="url"
-            placeholder="https://example.com/article"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && submit()}
-            disabled={loading}
-          />
-          <button style={{ ...s.btn, ...(loading ? s.btnDis : {}) }} onClick={submit} disabled={loading}>
-            {loading ? <><Spin />&nbsp;整理中…</> : "✦ 整理"}
-          </button>
+        {/* Input card */}
+        <div style={s.card}>
+          <label style={s.label}>文章链接</label>
+          <div style={s.inputRow}>
+            <input
+              style={s.input}
+              type="url"
+              placeholder="https://example.com/article"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && submit()}
+              disabled={loading}
+            />
+            <button
+              style={{ ...s.btn, ...(loading ? s.btnDis : {}) }}
+              onClick={submit}
+              disabled={loading}
+            >
+              {loading ? <><Spin />整理中…</> : "整理"}
+            </button>
+          </div>
+
+          {error && <div style={s.err}>⚠ {error}</div>}
+
+          {loading && (
+            <div style={s.loadRow}>
+              <Spin color="#2383E2" />
+              <span style={s.loadText}>AI 正在阅读并整理笔记，通常需要 10–20 秒…</span>
+            </div>
+          )}
         </div>
 
-        {error && <div style={s.err}>⚠ {error}</div>}
-
-        {loading && (
-          <div style={s.loadBox}>
-            <Spin size={18} />
-            <span>AI 正在阅读并整理笔记，通常需要 10-20 秒…</span>
-          </div>
-        )}
-
-        {note && <NoteResult note={note} />}
+        {/* Note result */}
+        {note && <NoteCard note={note} />}
 
         {!loading && !note && (
-          <p style={s.libLink}>
-            查看已整理的笔记 → <a href="/notes" style={s.a}>我的知识库</a>
+          <p style={s.hint}>
+            已整理的笔记 → <a href="/qa" style={s.link}>去知识库问答</a>
           </p>
         )}
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
 
-function NoteResult({ note }: { note: Note }) {
+function NoteCard({ note }: { note: Note }) {
   return (
-    <div style={s.card}>
-      <div style={s.cardHead}>
-        <h2 style={s.noteTitle}>{note.title}</h2>
+    <div style={nc.wrap}>
+      {/* Title */}
+      <div style={nc.head}>
+        <h2 style={nc.title}>{note.title}</h2>
         {note.source_url && (
-          <a href={note.source_url} target="_blank" rel="noreferrer" style={s.srcLink}>
+          <a href={note.source_url} target="_blank" rel="noreferrer" style={nc.srcLink}>
             查看原文 ↗
           </a>
         )}
       </div>
 
-      <Section icon="📌" title="核心摘要">
-        <p style={s.bodyText}>{note.summary}</p>
-      </Section>
+      {/* Summary */}
+      <Sec label="摘要">
+        <p style={nc.body}>{note.summary}</p>
+      </Sec>
 
+      {/* Concepts */}
       {note.concepts?.length > 0 && (
-        <Section icon="💡" title="核心概念">
-          <div style={s.conceptGrid}>
+        <Sec label="核心概念">
+          <div style={nc.conceptGrid}>
             {note.concepts.map((c, i) => (
-              <div key={i} style={s.conceptCard}>
-                <span style={s.term}>{c.term}</span>
-                <span style={s.def}>{c.definition}</span>
+              <div key={i} style={nc.concept}>
+                <span style={nc.term}>{c.term}</span>
+                <span style={nc.def}>{c.definition}</span>
               </div>
             ))}
           </div>
-        </Section>
+        </Sec>
       )}
 
+      {/* Key points */}
       {note.key_points?.length > 0 && (
-        <Section icon="✦" title="核心要点">
-          <ul style={s.ul}>
-            {note.key_points.map((pt, i) => (
-              <li key={i} style={s.li}><span style={s.dash}>—</span>{pt}</li>
+        <Sec label="核心要点">
+          <ul style={nc.ul}>
+            {note.key_points.map((p, i) => (
+              <li key={i} style={nc.li}>
+                <span style={nc.bullet} />
+                {p}
+              </li>
             ))}
           </ul>
-        </Section>
+        </Sec>
       )}
 
+      {/* Actions */}
       {note.action_items?.length > 0 && (
-        <Section icon="🎯" title="行动建议">
-          <ul style={s.ul}>
+        <Sec label="行动建议">
+          <ul style={nc.ul}>
             {note.action_items.map((a, i) => (
-              <li key={i} style={s.li}><span style={s.idx}>{i + 1}</span>{a}</li>
+              <li key={i} style={nc.li}>
+                <span style={nc.num}>{i + 1}</span>
+                {a}
+              </li>
             ))}
           </ul>
-        </Section>
+        </Sec>
       )}
 
-      <div style={s.footer}>
-        <div style={s.tags}>
-          {note.tags?.map((t, i) => <span key={i} style={s.tag}># {t}</span>)}
+      {/* Footer */}
+      <div style={nc.footer}>
+        <div style={nc.tags}>
+          {note.tags?.map((t, i) => <span key={i} style={nc.tag}>{t}</span>)}
         </div>
-        <div style={s.cite}>
-          {note.source_url && (
-            <span style={s.citeText}>
-              📎 来源：
-              <a href={note.source_url} target="_blank" rel="noreferrer" style={s.a}>
-                {note.source_url.replace(/^https?:\/\//, "").slice(0, 55)}
-              </a>
-            </span>
-          )}
-          {note.tokens_used ? <span style={s.tokens}>{note.tokens_used} tokens</span> : null}
-        </div>
+        {note.source_url && (
+          <span style={nc.cite}>
+            来源：<a href={note.source_url} target="_blank" rel="noreferrer" style={nc.citeLink}>
+              {note.source_url.replace(/^https?:\/\//, "").slice(0, 50)}
+            </a>
+          </span>
+        )}
       </div>
 
-      <button style={s.again} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-        ↑ 再整理一篇
-      </button>
+      <div style={nc.actions}>
+        <button style={nc.again} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+          ↑ 再整理一篇
+        </button>
+        <a href="/qa" style={nc.toQA}>去知识库提问 →</a>
+      </div>
     </div>
   );
 }
 
-function Section({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
+function Sec({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={s.section}>
-      <h3 style={s.secTitle}>{icon}&nbsp;{title}</h3>
+    <div style={nc.sec}>
+      <div style={nc.secLabel}>{label}</div>
       {children}
     </div>
   );
 }
 
-function Spin({ size = 14 }: { size?: number }) {
-  return (
-    <span style={{
-      display: "inline-block", width: size, height: size,
-      border: "2px solid rgba(201,168,76,0.2)", borderTopColor: "#C9A84C",
-      borderRadius: "50%", animation: "wf-spin 0.7s linear infinite", flexShrink: 0,
-    }} />
-  );
+function Spin({ color = "#fff", size = 14 }: { color?: string; size?: number }) {
+  return <span style={{
+    display: "inline-block", width: size, height: size, flexShrink: 0,
+    border: `2px solid ${color}33`, borderTopColor: color,
+    borderRadius: "50%", animation: "wf-spin 0.7s linear infinite",
+  }} />;
 }
 
-const G = "#C9A84C", D = "#0D0D0D", SF = "#141414", B = "#252525", T = "#E8E8E8", M = "#777";
+/* ── Styles ── */
 const s: Record<string, React.CSSProperties> = {
-  page:        { minHeight: "100vh", background: D, color: T, fontFamily: "'Noto Serif SC', Georgia, serif", padding: "0 16px 80px" },
-  wrap:        { maxWidth: 720, margin: "0 auto", paddingTop: 60 },
-  hero:        { textAlign: "center", marginBottom: 40 },
-  logo:        { fontSize: 12, letterSpacing: 4, color: G, textTransform: "uppercase", display: "block", marginBottom: 16 },
-  h1:          { fontSize: 30, fontWeight: 700, margin: "0 0 10px" },
-  sub:         { fontSize: 15, color: M, margin: 0 },
-  inputRow:    { display: "flex", gap: 10, marginBottom: 16 },
-  input:       { flex: 1, background: SF, border: `1px solid ${B}`, borderRadius: 8, color: T, fontSize: 15, padding: "12px 16px", outline: "none", fontFamily: "inherit" },
-  btn:         { background: G, color: D, border: "none", borderRadius: 8, padding: "12px 22px", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" },
-  btnDis:      { opacity: 0.6, cursor: "not-allowed" },
-  err:         { background: "#2A1010", border: "1px solid #5A2020", borderRadius: 8, padding: "12px 16px", fontSize: 14, color: "#EF9090", marginBottom: 16 },
-  loadBox:     { display: "flex", alignItems: "center", gap: 12, padding: "24px 0", color: M, fontSize: 14 },
-  libLink:     { textAlign: "center", marginTop: 40, fontSize: 14, color: M },
-  a:           { color: G, textDecoration: "none" },
-  card:        { background: SF, border: `1px solid ${B}`, borderRadius: 12, overflow: "hidden", marginTop: 24 },
-  cardHead:    { padding: "20px 24px 16px", borderBottom: `1px solid ${B}`, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
-  noteTitle:   { margin: 0, fontSize: 20, fontWeight: 700, lineHeight: 1.4 },
-  srcLink:     { fontSize: 12, color: G, textDecoration: "none", flexShrink: 0, marginTop: 4 },
-  section:     { padding: "16px 24px", borderBottom: `1px solid ${B}` },
-  secTitle:    { margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: M, letterSpacing: 1.5, textTransform: "uppercase" },
-  bodyText:    { margin: 0, fontSize: 15, lineHeight: 1.85, color: T },
-  conceptGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 8 },
-  conceptCard: { background: D, borderRadius: 8, padding: "10px 14px", display: "flex", flexDirection: "column", gap: 5 },
-  term:        { fontSize: 14, fontWeight: 700, color: G },
-  def:         { fontSize: 13, color: M, lineHeight: 1.55 },
-  ul:          { margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 9 },
-  li:          { display: "flex", gap: 10, fontSize: 14, lineHeight: 1.75, color: T, alignItems: "flex-start" },
-  dash:        { color: G, flexShrink: 0, marginTop: 2 },
-  idx:         { background: G + "22", color: G, borderRadius: 4, minWidth: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 },
-  footer:      { padding: "14px 24px", display: "flex", flexDirection: "column", gap: 10 },
+  page:     { minHeight: "100vh", background: "#F7F7F5", fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif", color: "#1A1A1A" },
+  nav:      { background: "#fff", borderBottom: "1px solid #E8E8E5", position: "sticky", top: 0, zIndex: 100 },
+  navInner: { maxWidth: 860, margin: "0 auto", padding: "0 24px", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between" },
+  brand:    { display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
+  brandIcon:{ fontSize: 18, fontWeight: 700, color: "#2383E2", fontFamily: "'Noto Serif SC', serif" },
+  brandName:{ fontSize: 15, fontWeight: 600, color: "#1A1A1A", letterSpacing: 0.5 },
+  navLinks: { display: "flex", gap: 24 },
+  navLink:  { fontSize: 14, color: "#666", textDecoration: "none", cursor: "pointer" },
+  navActive:{ color: "#2383E2", fontWeight: 500 },
+  main:     { maxWidth: 720, margin: "0 auto", padding: "48px 24px 80px" },
+  hero:     { textAlign: "center", marginBottom: 32 },
+  h1:       { fontSize: 28, fontWeight: 700, margin: "0 0 8px", color: "#1A1A1A", letterSpacing: -0.5 },
+  sub:      { fontSize: 15, color: "#888", margin: 0 },
+  card:     { background: "#fff", border: "1px solid #E8E8E5", borderRadius: 10, padding: "20px 24px", display: "flex", flexDirection: "column", gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
+  label:    { fontSize: 13, color: "#888", fontWeight: 500 },
+  inputRow: { display: "flex", gap: 10 },
+  input:    { flex: 1, border: "1px solid #E0E0DC", borderRadius: 7, fontSize: 14, padding: "10px 14px", color: "#1A1A1A", background: "#fff", fontFamily: "inherit", transition: "border-color 0.15s" },
+  btn:      { background: "#2383E2", color: "#fff", border: "none", borderRadius: 7, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", transition: "opacity 0.15s" },
+  btnDis:   { opacity: 0.6, cursor: "not-allowed" },
+  err:      { background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 6, padding: "10px 14px", fontSize: 13, color: "#DC2626" },
+  loadRow:  { display: "flex", alignItems: "center", gap: 10, color: "#888", fontSize: 13 },
+  loadText: {},
+  hint:     { textAlign: "center", marginTop: 24, fontSize: 13, color: "#aaa" },
+  link:     { color: "#2383E2", textDecoration: "none" },
+};
+
+const nc: Record<string, React.CSSProperties> = {
+  wrap:        { background: "#fff", border: "1px solid #E8E8E5", borderRadius: 10, marginTop: 20, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", animation: "wf-slide 0.35s ease" },
+  head:        { padding: "20px 24px 16px", borderBottom: "1px solid #F0F0EC", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  title:       { margin: 0, fontSize: 18, fontWeight: 700, color: "#1A1A1A", lineHeight: 1.4 },
+  srcLink:     { fontSize: 12, color: "#2383E2", textDecoration: "none", flexShrink: 0, marginTop: 2 },
+  sec:         { padding: "14px 24px", borderBottom: "1px solid #F0F0EC" },
+  secLabel:    { fontSize: 11, fontWeight: 600, color: "#aaa", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
+  body:        { margin: 0, fontSize: 14, lineHeight: 1.85, color: "#333" },
+  conceptGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 },
+  concept:     { background: "#F7F7F5", borderRadius: 7, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 4 },
+  term:        { fontSize: 13, fontWeight: 600, color: "#2383E2" },
+  def:         { fontSize: 12, color: "#666", lineHeight: 1.5 },
+  ul:          { margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 },
+  li:          { display: "flex", alignItems: "flex-start", gap: 10, fontSize: 14, color: "#333", lineHeight: 1.7 },
+  bullet:      { width: 6, height: 6, borderRadius: "50%", background: "#2383E2", flexShrink: 0, marginTop: 6 },
+  num:         { background: "#EBF4FF", color: "#2383E2", borderRadius: 4, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 },
+  footer:      { padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 },
   tags:        { display: "flex", flexWrap: "wrap", gap: 6 },
-  tag:         { fontSize: 12, color: M, background: "#1A1A1A", padding: "3px 9px", borderRadius: 4 },
-  cite:        { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  citeText:    { fontSize: 12, color: M },
-  tokens:      { fontSize: 11, color: M, opacity: 0.45 },
-  again:       { display: "block", width: "100%", background: "none", border: "none", borderTop: `1px solid ${B}`, color: M, padding: "13px 0", cursor: "pointer", fontFamily: "inherit", fontSize: 13 },
+  tag:         { fontSize: 12, color: "#666", background: "#F0F0EC", padding: "2px 8px", borderRadius: 4 },
+  cite:        { fontSize: 12, color: "#aaa" },
+  citeLink:    { color: "#2383E2", textDecoration: "none" },
+  actions:     { padding: "12px 24px", borderTop: "1px solid #F0F0EC", display: "flex", gap: 12, alignItems: "center" },
+  again:       { background: "none", border: "1px solid #E0E0DC", color: "#666", borderRadius: 6, padding: "8px 16px", cursor: "pointer", fontSize: 13, fontFamily: "inherit" },
+  toQA:        { fontSize: 13, color: "#2383E2", textDecoration: "none", marginLeft: "auto" },
 };
