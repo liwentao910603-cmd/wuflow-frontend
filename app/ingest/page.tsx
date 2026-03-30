@@ -1,271 +1,443 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import Link from "next/link";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:9000/api/v1";
+type Tab = "url" | "pdf" | "text";
+type Status = "idle" | "loading" | "success" | "error";
 
-interface Concept { term: string; definition: string }
 interface Note {
-  title: string; summary: string;
-  concepts: Concept[]; key_points: string[];
-  action_items: string[]; tags: string[];
-  source_url?: string; tokens_used?: number;
+  id: string;
+  title: string;
+  summary: string;
+  concepts: string[];
+  key_points: string[];
+  action_items: string[];
+  tags: string[];
+  source_url: string;
+  source_type: string;
+  created_at: string;
 }
 
-export default function IngestPage() {
-  const [url, setUrl]         = useState("");
-  const [loading, setLoading] = useState(false);
-  const [note, setNote]       = useState<Note | null>(null);
-  const [error, setError]     = useState("");
+const API = process.env.NEXT_PUBLIC_API_URL;
 
-  async function submit() {
-    if (!url.trim()) return;
-    setError(""); setNote(null); setLoading(true);
-    try {
-      const res  = await fetch(`${API}/ingest`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), generate_note: true }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail ?? "请求失败");
-      if (data.note) setNote(data.note);
-      else setError("笔记生成失败，请重试");
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+export default function IngestPage() {
+  const [tab, setTab] = useState<Tab>("url");
+  const [status, setStatus] = useState<Status>("idle");
+  const [error, setError] = useState("");
+  const [note, setNote] = useState<Note | null>(null);
+
+  // URL
+  const [url, setUrl] = useState("");
+
+  // PDF
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfTitle, setPdfTitle] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Text
+  const [textTitle, setTextTitle] = useState("");
+  const [textContent, setTextContent] = useState("");
+  const [textSource, setTextSource] = useState("");
+
+  const reset = () => {
+    setStatus("idle");
+    setError("");
+    setNote(null);
+  };
+
+  // ── PDF 文件处理 ──────────────────────────────────────
+  const handlePdfFile = (f: File) => {
+    if (!f.name.toLowerCase().endsWith(".pdf")) {
+      setError("请选择 PDF 文件");
+      setStatus("error");
+      return;
     }
-  }
+    if (f.size > 20 * 1024 * 1024) {
+      setError("PDF 不能超过 20MB");
+      setStatus("error");
+      return;
+    }
+    setPdfFile(f);
+    if (!pdfTitle) setPdfTitle(f.name.replace(/\.pdf$/i, ""));
+    setStatus("idle");
+    setError("");
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) handlePdfFile(f);
+  };
+
+  // ── 提交 ─────────────────────────────────────────────
+  const handleSubmit = async () => {
+    setStatus("loading");
+    setError("");
+    setNote(null);
+
+    try {
+      let res: Response;
+
+      if (tab === "url") {
+        if (!url.trim()) throw new Error("请输入URL");
+        res = await fetch(`${API}/ingest`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url.trim() }),
+        });
+      } else if (tab === "pdf") {
+        if (!pdfFile) throw new Error("请选择PDF文件");
+        const form = new FormData();
+        form.append("file", pdfFile);
+        if (pdfTitle.trim()) form.append("title", pdfTitle.trim());
+        res = await fetch(`${API}/ingest/pdf`, {
+          method: "POST",
+          body: form,
+        });
+      } else {
+        if (!textTitle.trim()) throw new Error("请填写标题");
+        if (textContent.trim().length < 50) throw new Error("内容至少50字");
+        res = await fetch(`${API}/ingest/text`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: textTitle.trim(),
+            text: textContent.trim(),
+            source_url: textSource.trim() || "",
+          }),
+        });
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "整理失败");
+      setNote(data.note);
+      setStatus("success");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "未知错误");
+      setStatus("error");
+    }
+  };
 
   return (
-    <div style={s.page}>
-      <style>{`
-        @keyframes wf-spin { to { transform: rotate(360deg) } }
-        @keyframes wf-slide { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
-        * { box-sizing: border-box; }
-        input:focus, textarea:focus { outline: none; border-color: #2383E2 !important; box-shadow: 0 0 0 2px rgba(35,131,226,0.15); }
-        button:hover:not(:disabled) { opacity: 0.85; }
-        a:hover { opacity: 0.7; }
-      `}</style>
-
-      {/* Nav */}
-      <nav style={s.nav}>
-        <div style={s.navInner}>
-          <a href="/" style={s.brand}>
-            <span style={s.brandIcon}>悟</span>
-            <span style={s.brandName}>WuFlow</span>
-          </a>
-          <div style={s.navLinks}>
-            <span style={{ ...s.navLink, ...s.navActive }}>整理资料</span>
-            <a href="/qa" style={s.navLink}>知识库问答</a>
-          </div>
+    <div className="min-h-screen bg-white">
+      {/* 顶部导航 */}
+      <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+        <Link href="/" className="text-lg font-semibold text-gray-900 tracking-tight">
+          悟流 WuFlow
+        </Link>
+        <div className="flex items-center gap-6 text-sm text-gray-500">
+          <Link href="/ingest" className="text-gray-900 font-medium">整理资料</Link>
+          <Link href="/notes" className="hover:text-gray-900 transition-colors">知识库</Link>
+          <Link href="/qa" className="hover:text-gray-900 transition-colors">AI问答</Link>
         </div>
       </nav>
 
-      <main style={s.main}>
-        {/* Hero */}
-        <div style={s.hero}>
-          <h1 style={s.h1}>一键整理资料</h1>
-          <p style={s.sub}>粘贴任意文章链接，AI 自动生成结构化学习笔记</p>
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-1">整理资料</h1>
+          <p className="text-gray-400 text-sm">支持网页URL、PDF文件、或直接粘贴文本</p>
         </div>
 
-        {/* Input card */}
-        <div style={s.card}>
-          <label style={s.label}>文章链接</label>
-          <div style={s.inputRow}>
-            <input
-              style={s.input}
-              type="url"
-              placeholder="https://example.com/article"
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && submit()}
-              disabled={loading}
-            />
+        {/* Tab 切换 */}
+        <div className="flex gap-1 mb-6 bg-gray-50 p-1 rounded-lg w-fit">
+          {(["url", "pdf", "text"] as Tab[]).map((t) => (
             <button
-              style={{ ...s.btn, ...(loading ? s.btnDis : {}) }}
-              onClick={submit}
-              disabled={loading}
+              key={t}
+              onClick={() => { setTab(t); reset(); }}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                tab === t
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
             >
-              {loading ? <><Spin />整理中…</> : "整理"}
+              {t === "url" ? "🔗 网页URL" : t === "pdf" ? "📄 PDF文件" : "✏️ 粘贴文本"}
             </button>
-          </div>
+          ))}
+        </div>
 
-          {error && <div style={s.err}>⚠ {error}</div>}
+        {/* 表单 */}
+        <div className="space-y-4">
 
-          {loading && (
-            <div style={s.loadRow}>
-              <Spin color="#2383E2" />
-              <span style={s.loadText}>AI 正在阅读并整理笔记，通常需要 10–20 秒…</span>
+          {/* URL Tab */}
+          {tab === "url" && (
+            <div>
+              <label className="block text-sm text-gray-600 mb-1.5">网页地址</label>
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com/article"
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-400 transition-colors"
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              />
+              <p className="text-xs text-gray-400 mt-1.5">
+                少数派、知乎、微信公众号等中文网站效果最佳
+              </p>
             </div>
           )}
-        </div>
 
-        {/* Note result */}
-        {note && <NoteCard note={note} />}
+          {/* PDF Tab */}
+          {tab === "pdf" && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1.5">
+                  PDF文件 <span className="text-gray-400">（最大20MB）</span>
+                </label>
 
-        {!loading && !note && (
-          <p style={s.hint}>
-            已整理的笔记 → <a href="/qa" style={s.link}>去知识库问答</a>
-          </p>
-        )}
-      </main>
-    </div>
-  );
-}
+                {/* 拖拽区域 */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`border-2 border-dashed rounded-lg px-6 py-10 text-center cursor-pointer transition-all select-none ${
+                    isDragging
+                      ? "border-gray-400 bg-gray-50 scale-[1.01]"
+                      : pdfFile
+                      ? "border-gray-300 bg-gray-50"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {pdfFile ? (
+                    <div>
+                      <p className="text-2xl mb-2">📄</p>
+                      <p className="text-sm font-medium text-gray-700">{pdfFile.name}</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {(pdfFile.size / 1024 / 1024).toFixed(2)} MB · 点击或拖拽重新选择
+                      </p>
+                    </div>
+                  ) : isDragging ? (
+                    <div>
+                      <p className="text-2xl mb-2">⬇️</p>
+                      <p className="text-sm text-gray-500 font-medium">放开以上传</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-2xl mb-2">📂</p>
+                      <p className="text-sm text-gray-400">点击选择或拖拽PDF文件到此处</p>
+                      <p className="text-xs text-gray-300 mt-1">仅支持 .pdf 格式，最大 20MB</p>
+                    </div>
+                  )}
+                </div>
 
-function NoteCard({ note }: { note: Note }) {
-  return (
-    <div style={nc.wrap}>
-      {/* Title */}
-      <div style={nc.head}>
-        <h2 style={nc.title}>{note.title}</h2>
-        {note.source_url && (
-          <a href={note.source_url} target="_blank" rel="noreferrer" style={nc.srcLink}>
-            查看原文 ↗
-          </a>
-        )}
-      </div>
-
-      {/* Summary */}
-      <Sec label="摘要">
-        <p style={nc.body}>{note.summary}</p>
-      </Sec>
-
-      {/* Concepts */}
-      {note.concepts?.length > 0 && (
-        <Sec label="核心概念">
-          <div style={nc.conceptGrid}>
-            {note.concepts.map((c, i) => (
-              <div key={i} style={nc.concept}>
-                <span style={nc.term}>{c.term}</span>
-                <span style={nc.def}>{c.definition}</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handlePdfFile(f);
+                  }}
+                />
               </div>
-            ))}
-          </div>
-        </Sec>
-      )}
 
-      {/* Key points */}
-      {note.key_points?.length > 0 && (
-        <Sec label="核心要点">
-          <ul style={nc.ul}>
-            {note.key_points.map((p, i) => (
-              <li key={i} style={nc.li}>
-                <span style={nc.bullet} />
-                {p}
-              </li>
-            ))}
-          </ul>
-        </Sec>
-      )}
+              <div>
+                <label className="block text-sm text-gray-600 mb-1.5">
+                  标题 <span className="text-gray-400">（可选，默认用文件名）</span>
+                </label>
+                <input
+                  type="text"
+                  value={pdfTitle}
+                  onChange={(e) => setPdfTitle(e.target.value)}
+                  placeholder="这份PDF的标题"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-400 transition-colors"
+                />
+              </div>
+            </div>
+          )}
 
-      {/* Actions */}
-      {note.action_items?.length > 0 && (
-        <Sec label="行动建议">
-          <ul style={nc.ul}>
-            {note.action_items.map((a, i) => (
-              <li key={i} style={nc.li}>
-                <span style={nc.num}>{i + 1}</span>
-                {a}
-              </li>
-            ))}
-          </ul>
-        </Sec>
-      )}
+          {/* 文本 Tab */}
+          {tab === "text" && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1.5">
+                  标题 <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={textTitle}
+                  onChange={(e) => setTextTitle(e.target.value)}
+                  placeholder="给这段内容起个名字"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-400 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1.5">
+                  内容 <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={textContent}
+                  onChange={(e) => setTextContent(e.target.value)}
+                  placeholder="粘贴你想整理的文章、笔记、文字..."
+                  rows={8}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"
+                />
+                <p className="text-xs text-gray-400 mt-1">{textContent.length} 字 · 至少50字</p>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1.5">
+                  来源链接 <span className="text-gray-400">（可选）</span>
+                </label>
+                <input
+                  type="url"
+                  value={textSource}
+                  onChange={(e) => setTextSource(e.target.value)}
+                  placeholder="https://... （原文链接，方便追溯）"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-400 transition-colors"
+                />
+              </div>
+            </div>
+          )}
 
-      {/* Footer */}
-      <div style={nc.footer}>
-        <div style={nc.tags}>
-          {note.tags?.map((t, i) => <span key={i} style={nc.tag}>{t}</span>)}
+          {/* 错误提示 */}
+          {status === "error" && (
+            <div className="bg-red-50 border border-red-100 rounded-lg px-4 py-3 text-sm text-red-600">
+              ⚠️ {error}
+            </div>
+          )}
+
+          {/* 提交按钮 */}
+          <button
+            onClick={handleSubmit}
+            disabled={status === "loading"}
+            className="w-full bg-gray-900 text-white rounded-lg py-3 text-sm font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {status === "loading" ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" />
+                </svg>
+                AI正在整理，通常需要15–30秒...
+              </span>
+            ) : (
+              "开始整理 →"
+            )}
+          </button>
         </div>
-        {note.source_url && (
-          <span style={nc.cite}>
-            来源：<a href={note.source_url} target="_blank" rel="noreferrer" style={nc.citeLink}>
-              {note.source_url.replace(/^https?:\/\//, "").slice(0, 50)}
-            </a>
-          </span>
-        )}
-      </div>
 
-      <div style={nc.actions}>
-        <button style={nc.again} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          ↑ 再整理一篇
-        </button>
-        <a href="/qa" style={nc.toQA}>去知识库提问 →</a>
+        {/* 结果展示 */}
+        {status === "success" && note && (
+          <div className="mt-8 border border-gray-100 rounded-xl overflow-hidden">
+            <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">整理完成 ✓</span>
+              <Link href="/notes" className="text-xs text-gray-500 hover:text-gray-900 transition-colors">
+                查看知识库 →
+              </Link>
+            </div>
+
+            <div className="p-5 space-y-5">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{note.title}</h2>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    note.source_type === "url"
+                      ? "bg-blue-50 text-blue-600"
+                      : note.source_type === "pdf"
+                      ? "bg-orange-50 text-orange-600"
+                      : "bg-green-50 text-green-600"
+                  }`}>
+                    {note.source_type === "url" ? "网页" : note.source_type === "pdf" ? "PDF" : "文本"}
+                  </span>
+                  {note.source_url &&
+                    !note.source_url.startsWith("pdf://") &&
+                    !note.source_url.startsWith("text://") && (
+                      <a
+                        href={note.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-gray-400 hover:text-gray-600 truncate max-w-xs transition-colors"
+                      >
+                        {note.source_url}
+                      </a>
+                    )}
+                </div>
+              </div>
+
+              <NoteSection title="摘要" icon="📝">
+                <p className="text-sm text-gray-600 leading-relaxed">{note.summary}</p>
+              </NoteSection>
+
+              {note.concepts?.length > 0 && (
+                <NoteSection title="核心概念" icon="💡">
+                  <div className="flex flex-wrap gap-2">
+                    {note.concepts.map((c, i) => (
+                      <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </NoteSection>
+              )}
+
+              {note.key_points?.length > 0 && (
+                <NoteSection title="核心要点" icon="✅">
+                  <ul className="space-y-1.5">
+                    {note.key_points.map((p, i) => (
+                      <li key={i} className="text-sm text-gray-600 flex gap-2">
+                        <span className="text-gray-300 shrink-0">·</span>{p}
+                      </li>
+                    ))}
+                  </ul>
+                </NoteSection>
+              )}
+
+              {note.action_items?.length > 0 && (
+                <NoteSection title="行动建议" icon="🚀">
+                  <ul className="space-y-1.5">
+                    {note.action_items.map((a, i) => (
+                      <li key={i} className="text-sm text-gray-600 flex gap-2">
+                        <span className="text-gray-300 shrink-0">{i + 1}.</span>{a}
+                      </li>
+                    ))}
+                  </ul>
+                </NoteSection>
+              )}
+
+              {note.tags?.length > 0 && (
+                <div className="pt-1 flex flex-wrap gap-1.5">
+                  {note.tags.map((tag, i) => (
+                    <span key={i} className="text-xs text-gray-400">#{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function Sec({ label, children }: { label: string; children: React.ReactNode }) {
+function NoteSection({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div style={nc.sec}>
-      <div style={nc.secLabel}>{label}</div>
+    <div>
+      <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+        {icon} {title}
+      </h3>
       {children}
     </div>
   );
 }
-
-function Spin({ color = "#fff", size = 14 }: { color?: string; size?: number }) {
-  return <span style={{
-    display: "inline-block", width: size, height: size, flexShrink: 0,
-    border: `2px solid ${color}33`, borderTopColor: color,
-    borderRadius: "50%", animation: "wf-spin 0.7s linear infinite",
-  }} />;
-}
-
-/* ── Styles ── */
-const s: Record<string, React.CSSProperties> = {
-  page:     { minHeight: "100vh", background: "#F7F7F5", fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif", color: "#1A1A1A" },
-  nav:      { background: "#fff", borderBottom: "1px solid #E8E8E5", position: "sticky", top: 0, zIndex: 100 },
-  navInner: { maxWidth: 860, margin: "0 auto", padding: "0 24px", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between" },
-  brand:    { display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
-  brandIcon:{ fontSize: 18, fontWeight: 700, color: "#2383E2", fontFamily: "'Noto Serif SC', serif" },
-  brandName:{ fontSize: 15, fontWeight: 600, color: "#1A1A1A", letterSpacing: 0.5 },
-  navLinks: { display: "flex", gap: 24 },
-  navLink:  { fontSize: 14, color: "#666", textDecoration: "none", cursor: "pointer" },
-  navActive:{ color: "#2383E2", fontWeight: 500 },
-  main:     { maxWidth: 720, margin: "0 auto", padding: "48px 24px 80px" },
-  hero:     { textAlign: "center", marginBottom: 32 },
-  h1:       { fontSize: 28, fontWeight: 700, margin: "0 0 8px", color: "#1A1A1A", letterSpacing: -0.5 },
-  sub:      { fontSize: 15, color: "#888", margin: 0 },
-  card:     { background: "#fff", border: "1px solid #E8E8E5", borderRadius: 10, padding: "20px 24px", display: "flex", flexDirection: "column", gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" },
-  label:    { fontSize: 13, color: "#888", fontWeight: 500 },
-  inputRow: { display: "flex", gap: 10 },
-  input:    { flex: 1, border: "1px solid #E0E0DC", borderRadius: 7, fontSize: 14, padding: "10px 14px", color: "#1A1A1A", background: "#fff", fontFamily: "inherit", transition: "border-color 0.15s" },
-  btn:      { background: "#2383E2", color: "#fff", border: "none", borderRadius: 7, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", transition: "opacity 0.15s" },
-  btnDis:   { opacity: 0.6, cursor: "not-allowed" },
-  err:      { background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 6, padding: "10px 14px", fontSize: 13, color: "#DC2626" },
-  loadRow:  { display: "flex", alignItems: "center", gap: 10, color: "#888", fontSize: 13 },
-  loadText: {},
-  hint:     { textAlign: "center", marginTop: 24, fontSize: 13, color: "#aaa" },
-  link:     { color: "#2383E2", textDecoration: "none" },
-};
-
-const nc: Record<string, React.CSSProperties> = {
-  wrap:        { background: "#fff", border: "1px solid #E8E8E5", borderRadius: 10, marginTop: 20, overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", animation: "wf-slide 0.35s ease" },
-  head:        { padding: "20px 24px 16px", borderBottom: "1px solid #F0F0EC", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
-  title:       { margin: 0, fontSize: 18, fontWeight: 700, color: "#1A1A1A", lineHeight: 1.4 },
-  srcLink:     { fontSize: 12, color: "#2383E2", textDecoration: "none", flexShrink: 0, marginTop: 2 },
-  sec:         { padding: "14px 24px", borderBottom: "1px solid #F0F0EC" },
-  secLabel:    { fontSize: 11, fontWeight: 600, color: "#aaa", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
-  body:        { margin: 0, fontSize: 14, lineHeight: 1.85, color: "#333" },
-  conceptGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 },
-  concept:     { background: "#F7F7F5", borderRadius: 7, padding: "10px 12px", display: "flex", flexDirection: "column", gap: 4 },
-  term:        { fontSize: 13, fontWeight: 600, color: "#2383E2" },
-  def:         { fontSize: 12, color: "#666", lineHeight: 1.5 },
-  ul:          { margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 },
-  li:          { display: "flex", alignItems: "flex-start", gap: 10, fontSize: 14, color: "#333", lineHeight: 1.7 },
-  bullet:      { width: 6, height: 6, borderRadius: "50%", background: "#2383E2", flexShrink: 0, marginTop: 6 },
-  num:         { background: "#EBF4FF", color: "#2383E2", borderRadius: 4, minWidth: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 },
-  footer:      { padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 },
-  tags:        { display: "flex", flexWrap: "wrap", gap: 6 },
-  tag:         { fontSize: 12, color: "#666", background: "#F0F0EC", padding: "2px 8px", borderRadius: 4 },
-  cite:        { fontSize: 12, color: "#aaa" },
-  citeLink:    { color: "#2383E2", textDecoration: "none" },
-  actions:     { padding: "12px 24px", borderTop: "1px solid #F0F0EC", display: "flex", gap: 12, alignItems: "center" },
-  again:       { background: "none", border: "1px solid #E0E0DC", color: "#666", borderRadius: 6, padding: "8px 16px", cursor: "pointer", fontSize: 13, fontFamily: "inherit" },
-  toQA:        { fontSize: 13, color: "#2383E2", textDecoration: "none", marginLeft: "auto" },
-};
