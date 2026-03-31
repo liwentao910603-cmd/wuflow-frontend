@@ -23,25 +23,47 @@ export default function LoginPage() {
     setStatus("loading");
     setMessage("");
 
-    if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setStatus("error");
-        setMessage(error.message === "Invalid login credentials" ? "邮箱或密码错误" : error.message);
+    try {
+      if (mode === "login") {
+        console.log("[login] 尝试登录:", email);
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        console.log("[login] 登录结果:", { user: data?.user?.email, error });
+
+        if (error) {
+          setStatus("error");
+          setMessage(
+            error.message === "Invalid login credentials"
+              ? "邮箱或密码错误"
+              : "登录失败，请稍后重试"
+          );
+        } else {
+          router.push("/ingest");
+          router.refresh();
+        }
       } else {
-        router.push("/ingest");
-        router.refresh();
+        console.log("[login] 尝试注册:", email);
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        console.log("[login] 注册结果:", { user: data?.user?.email, error });
+
+        if (error) {
+          setStatus("error");
+          setMessage("注册失败，请稍后重试");
+        } else {
+          setStatus("success");
+          setMessage("注册成功！请检查邮箱，点击验证链接后即可登录。");
+        }
       }
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) {
-        setStatus("error");
-        setMessage(error.message);
-      } else {
-        setStatus("success");
-        setMessage("注册成功！请检查邮箱，点击验证链接后即可登录。");
-      }
+    } catch (e: unknown) {
+      console.error("[login] 异常:", e);
+      setStatus("error");
+      setMessage("网络异常，请检查网络连接后重试");
     }
+  };
+
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    setStatus("idle");
+    setMessage("");
   };
 
   return (
@@ -123,7 +145,7 @@ export default function LoginPage() {
             <>
               还没有账号？{" "}
               <button
-                onClick={() => { setMode("signup"); setStatus("idle"); setMessage(""); }}
+                onClick={() => switchMode("signup")}
                 className="text-gray-900 hover:underline font-medium"
               >
                 注册
@@ -133,7 +155,7 @@ export default function LoginPage() {
             <>
               已有账号？{" "}
               <button
-                onClick={() => { setMode("login"); setStatus("idle"); setMessage(""); }}
+                onClick={() => switchMode("login")}
                 className="text-gray-900 hover:underline font-medium"
               >
                 登录
