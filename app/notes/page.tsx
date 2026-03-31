@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface Note {
   id: string;
@@ -20,6 +21,7 @@ interface Note {
 type Filter = "all" | "url" | "pdf" | "text";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
+const supabase = createClient();
 
 function formatDate(iso: string) {
   const d = new Date(iso);
@@ -50,6 +52,22 @@ export default function NotesPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
+  // Auth
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email ?? null);
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  };
+
   const fetchNotes = useCallback(async () => {
     setLoading(true);
     try {
@@ -58,7 +76,11 @@ export default function NotesPage() {
         page_size: "12",
         ...(filter !== "all" ? { source_type: filter } : {}),
       });
-      const res = await fetch(`${API}/notes?${params}`);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${API}/notes?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await res.json();
       setNotes(data.notes || []);
       setTotal(data.total || 0);
@@ -79,7 +101,11 @@ export default function NotesPage() {
     if (!confirm("确认删除这条笔记？删除后无法恢复。")) return;
     setDeleting(id);
     try {
-      await fetch(`${API}/notes/${id}`, { method: "DELETE" });
+      const token = accessToken;
+      await fetch(`${API}/notes/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
     } finally {
       setDeleting(null);
       fetchNotes();
@@ -97,6 +123,17 @@ export default function NotesPage() {
           <Link href="/ingest" className="hover:text-gray-900 transition-colors">整理资料</Link>
           <Link href="/notes" className="text-gray-900 font-medium">知识库</Link>
           <Link href="/qa" className="hover:text-gray-900 transition-colors">AI问答</Link>
+          {userEmail && (
+            <div className="flex items-center gap-3 pl-3 border-l border-gray-100">
+              <span className="text-gray-400 text-xs">{userEmail}</span>
+              <button
+                onClick={handleSignOut}
+                className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
+              >
+                退出
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 

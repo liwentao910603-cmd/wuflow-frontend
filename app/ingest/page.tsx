@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 type Tab = "url" | "pdf" | "text";
 type Status = "idle" | "loading" | "success" | "error";
@@ -20,12 +21,17 @@ interface Note {
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL;
+const supabase = createClient();
 
 export default function IngestPage() {
   const [tab, setTab] = useState<Tab>("url");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [note, setNote] = useState<Note | null>(null);
+
+  // Auth
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   // URL
   const [url, setUrl] = useState("");
@@ -40,6 +46,18 @@ export default function IngestPage() {
   const [textTitle, setTextTitle] = useState("");
   const [textContent, setTextContent] = useState("");
   const [textSource, setTextSource] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email ?? null);
+      setAccessToken(session?.access_token ?? null);
+    });
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  };
 
   const reset = () => {
     setStatus("idle");
@@ -88,6 +106,8 @@ export default function IngestPage() {
     setError("");
     setNote(null);
 
+    const authHeader = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+
     try {
       let res: Response;
 
@@ -95,7 +115,7 @@ export default function IngestPage() {
         if (!url.trim()) throw new Error("请输入URL");
         res = await fetch(`${API}/ingest`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeader },
           body: JSON.stringify({ url: url.trim() }),
         });
       } else if (tab === "pdf") {
@@ -105,6 +125,7 @@ export default function IngestPage() {
         if (pdfTitle.trim()) form.append("title", pdfTitle.trim());
         res = await fetch(`${API}/ingest/pdf`, {
           method: "POST",
+          headers: { ...authHeader },
           body: form,
         });
       } else {
@@ -112,7 +133,7 @@ export default function IngestPage() {
         if (textContent.trim().length < 50) throw new Error("内容至少50字");
         res = await fetch(`${API}/ingest/text`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeader },
           body: JSON.stringify({
             title: textTitle.trim(),
             text: textContent.trim(),
@@ -142,6 +163,17 @@ export default function IngestPage() {
           <Link href="/ingest" className="text-gray-900 font-medium">整理资料</Link>
           <Link href="/notes" className="hover:text-gray-900 transition-colors">知识库</Link>
           <Link href="/qa" className="hover:text-gray-900 transition-colors">AI问答</Link>
+          {userEmail && (
+            <div className="flex items-center gap-3 pl-3 border-l border-gray-100">
+              <span className="text-gray-400 text-xs">{userEmail}</span>
+              <button
+                onClick={handleSignOut}
+                className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
+              >
+                退出
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 

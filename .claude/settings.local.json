@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(node -e \"const pkg = require\\(''''/c/Users/72719/wuflow/frontend/node_modules/next/package.json''''\\); console.log\\(pkg.version\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d[''''version'''']\\)\")",
+      "Bash(grep -r \"PROXY_FILENAME\\\\|proxy_filename\\\\|proxy\" C:/Users/72719/wuflow/frontend/node_modules/next/dist/ --include=*.js -l)",
+      "Bash(grep -r PROXY_FILENAMEs*= C:/Users/72719/wuflow/frontend/node_modules/next/dist/ --include=*.js)"
+    ]
+  }
+}
