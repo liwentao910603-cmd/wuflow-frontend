@@ -203,7 +203,8 @@ export default function IngestPage() {
       setToast("✅ 笔记已生成并加入知识库");
       setTimeout(() => setToast(null), 3000);
       await fetchNotes();
-      if (data.note?.id) setExpanded(data.note.id);
+      const noteId = (data.note as { id?: string } | null)?.id;
+      if (noteId) setExpanded(noteId);
     } catch (e: unknown) {
       setFormError(e instanceof Error ? e.message : "未知错误，请稍后重试");
     } finally {
