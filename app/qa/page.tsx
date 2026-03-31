@@ -29,7 +29,7 @@ export default function QAPage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   useEffect(() => {
@@ -90,7 +90,8 @@ export default function QAPage() {
           </a>
           <div style={s.navLinks}>
             <a href="/ingest" style={s.navLink}>整理资料</a>
-            <span style={{ ...s.navLink, ...s.navActive }}>知识库问答</span>
+            <a href="/notes" style={s.navLink}>知识库</a>
+            <span style={{ ...s.navLink, ...s.navActive }}>AI问答</span>
             {userEmail && (
               <div style={s.userBar}>
                 <span style={s.userEmail}>{userEmail}</span>

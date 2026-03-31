@@ -1,23 +1,25 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
-const initSupabase = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-};
-
-const supabase = initSupabase();
+const supabase = createClient();
 
 export default function Home() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+      setUserEmail(session?.user?.email ?? '');
+    });
+  }, []);
 
   const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
@@ -26,7 +28,6 @@ export default function Home() {
     if (!trimmed || !isValidEmail(trimmed)) {
       setStatus('error'); setMessage('请输入有效的邮箱地址'); return;
     }
-    if (!supabase) { setStatus('error'); setMessage('系统错误，请稍后重试'); return; }
     setStatus('loading');
     const { error } = await supabase.from('waitlist').insert([{ email: trimmed }]);
     if (error) {
@@ -47,12 +48,24 @@ export default function Home() {
           <Link href="/ingest" className="hover:text-gray-900 transition-colors">整理资料</Link>
           <Link href="/notes" className="hover:text-gray-900 transition-colors">知识库</Link>
           <Link href="/qa" className="hover:text-gray-900 transition-colors">AI问答</Link>
-          <button
-            onClick={() => inputRef.current?.focus()}
-            className="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-gray-700 transition-colors"
-          >
-            提前加入
-          </button>
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 text-xs hidden sm:inline">{userEmail}</span>
+              <Link
+                href="/ingest"
+                className="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-gray-700 transition-colors"
+              >
+                进入应用 →
+              </Link>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-gray-700 transition-colors"
+            >
+              登录 / 注册
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -69,31 +82,50 @@ export default function Home() {
           把散乱的资料变成结构化知识，把重复的文档工作自动化。
         </p>
 
-        {/* 邮件提交 */}
-        <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
-          <input
-            ref={inputRef}
-            type="email"
-            value={email}
-            onChange={(e) => { setEmail(e.target.value); setStatus('idle'); setMessage(''); }}
-            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-            placeholder="输入你的邮箱，提前加入等待名单"
-            disabled={status === 'loading' || status === 'success'}
-            className="border border-gray-200 text-gray-900 px-4 py-3 rounded-lg flex-1 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-50 transition-colors"
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={status === 'loading' || status === 'success'}
-            className="bg-gray-900 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-          >
-            {status === 'loading' ? '提交中...' : status === 'success' ? '已加入 ✓' : '加入等待名单 →'}
-          </button>
-        </div>
-
-        {message && (
-          <p className={`mt-4 text-sm ${status === 'success' ? 'text-green-600' : 'text-red-500'}`}>
-            {message}
-          </p>
+        {/* CTA：已登录显示入口按钮，未登录显示邮件等待名单 */}
+        {isLoggedIn ? (
+          <div className="flex flex-col items-center gap-4">
+            <Link
+              href="/ingest"
+              className="bg-gray-900 hover:bg-gray-700 text-white px-8 py-3 rounded-lg text-sm font-medium transition-colors"
+            >
+              开始整理资料 →
+            </Link>
+            <p className="text-xs text-gray-400">已登录为 {userEmail}</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
+              <input
+                ref={inputRef}
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setStatus('idle'); setMessage(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                placeholder="输入你的邮箱，提前加入等待名单"
+                disabled={status === 'loading' || status === 'success'}
+                className="border border-gray-200 text-gray-900 px-4 py-3 rounded-lg flex-1 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-50 transition-colors"
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={status === 'loading' || status === 'success'}
+                className="bg-gray-900 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+              >
+                {status === 'loading' ? '提交中...' : status === 'success' ? '已加入 ✓' : '加入等待名单 →'}
+              </button>
+            </div>
+            <p className="mt-4 text-sm text-gray-400">
+              已有账号？{' '}
+              <Link href="/login" className="text-gray-900 hover:underline font-medium">
+                立即登录
+              </Link>
+            </p>
+            {message && (
+              <p className={`mt-3 text-sm ${status === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                {message}
+              </p>
+            )}
+          </>
         )}
       </section>
 

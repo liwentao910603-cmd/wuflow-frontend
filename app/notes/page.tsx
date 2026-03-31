@@ -30,8 +30,8 @@ function formatDate(iso: string) {
 
 function SourceBadge({ type }: { type: string }) {
   const config: Record<string, { label: string; cls: string }> = {
-    url: { label: "网页", cls: "bg-blue-50 text-blue-500" },
-    pdf: { label: "PDF", cls: "bg-orange-50 text-orange-500" },
+    url:  { label: "网页", cls: "bg-blue-50 text-blue-500" },
+    pdf:  { label: "PDF",  cls: "bg-orange-50 text-orange-500" },
     text: { label: "文本", cls: "bg-green-50 text-green-500" },
   };
   const c = config[type] || { label: type, cls: "bg-gray-100 text-gray-500" };
@@ -52,7 +52,6 @@ export default function NotesPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Auth
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
@@ -65,7 +64,7 @@ export default function NotesPage() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   const fetchNotes = useCallback(async () => {
@@ -92,9 +91,7 @@ export default function NotesPage() {
     }
   }, [page, filter]);
 
-  useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
+  useEffect(() => { fetchNotes(); }, [fetchNotes]);
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -113,7 +110,7 @@ export default function NotesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif" }}>
       {/* 导航 */}
       <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <Link href="/" className="text-lg font-semibold text-gray-900 tracking-tight">
@@ -125,7 +122,7 @@ export default function NotesPage() {
           <Link href="/qa" className="hover:text-gray-900 transition-colors">AI问答</Link>
           {userEmail && (
             <div className="flex items-center gap-3 pl-3 border-l border-gray-100">
-              <span className="text-gray-400 text-xs">{userEmail}</span>
+              <span className="text-gray-400 text-xs hidden sm:inline">{userEmail}</span>
               <button
                 onClick={handleSignOut}
                 className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
@@ -137,9 +134,23 @@ export default function NotesPage() {
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        {/* 整合提示 */}
+        <div className="mb-8 bg-gray-50 border border-gray-100 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-700 font-medium mb-0.5">知识库已整合到整理资料页</p>
+            <p className="text-xs text-gray-400">在整理资料页可以边提交新资料、边实时查看已有笔记，体验更流畅。</p>
+          </div>
+          <Link
+            href="/ingest"
+            className="shrink-0 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-center"
+          >
+            前往整理页 →
+          </Link>
+        </div>
+
         {/* 标题栏 */}
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex items-end justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 mb-1">知识库</h1>
             <p className="text-gray-400 text-sm">
@@ -199,7 +210,6 @@ export default function NotesPage() {
                 key={note.id}
                 className="border border-gray-100 rounded-xl overflow-hidden hover:border-gray-200 transition-colors"
               >
-                {/* 卡片头部，点击展开/收起 */}
                 <div
                   className="px-5 py-4 cursor-pointer flex items-start justify-between gap-4"
                   onClick={() => setExpanded(expanded === note.id ? null : note.id)}
@@ -230,29 +240,19 @@ export default function NotesPage() {
                   </div>
                 </div>
 
-                {/* 展开的详情内容 */}
                 {expanded === note.id && (
                   <div className="px-5 pb-5 border-t border-gray-50 pt-4 space-y-4">
                     <div>
-                      <p className="text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">
-                        📝 摘要
-                      </p>
+                      <p className="text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">📝 摘要</p>
                       <p className="text-sm text-gray-600 leading-relaxed">{note.summary}</p>
                     </div>
 
                     {note.concepts?.length > 0 && (
                       <div>
-                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
-                          💡 核心概念
-                        </p>
+                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">💡 核心概念</p>
                         <div className="flex flex-wrap gap-1.5">
                           {note.concepts.map((c, i) => (
-                            <span
-                              key={i}
-                              className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full"
-                            >
-                              {c}
-                            </span>
+                            <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">{c}</span>
                           ))}
                         </div>
                       </div>
@@ -260,14 +260,11 @@ export default function NotesPage() {
 
                     {note.key_points?.length > 0 && (
                       <div>
-                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
-                          ✅ 核心要点
-                        </p>
+                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">✅ 核心要点</p>
                         <ul className="space-y-1.5">
                           {note.key_points.map((p, i) => (
                             <li key={i} className="text-sm text-gray-600 flex gap-2">
-                              <span className="text-gray-300 shrink-0">·</span>
-                              {p}
+                              <span className="text-gray-300 shrink-0">·</span>{p}
                             </li>
                           ))}
                         </ul>
@@ -276,27 +273,21 @@ export default function NotesPage() {
 
                     {note.action_items?.length > 0 && (
                       <div>
-                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
-                          🚀 行动建议
-                        </p>
+                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">🚀 行动建议</p>
                         <ul className="space-y-1.5">
                           {note.action_items.map((a, i) => (
                             <li key={i} className="text-sm text-gray-600 flex gap-2">
-                              <span className="text-gray-300 shrink-0">{i + 1}.</span>
-                              {a}
+                              <span className="text-gray-300 shrink-0">{i + 1}.</span>{a}
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
 
-                    {/* 底部：标签 + 来源链接 + 去问答 */}
                     <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                       <div className="flex flex-wrap gap-1.5">
                         {note.tags?.map((tag, i) => (
-                          <span key={i} className="text-xs text-gray-300">
-                            #{tag}
-                          </span>
+                          <span key={i} className="text-xs text-gray-300">#{tag}</span>
                         ))}
                       </div>
                       <div className="flex items-center gap-4">
@@ -312,10 +303,7 @@ export default function NotesPage() {
                               查看原文 →
                             </a>
                           )}
-                        <Link
-                          href="/qa"
-                          className="text-xs text-gray-500 hover:text-gray-900 transition-colors"
-                        >
+                        <Link href="/qa" className="text-xs text-gray-500 hover:text-gray-900 transition-colors">
                           💬 去问答
                         </Link>
                       </div>
@@ -337,9 +325,7 @@ export default function NotesPage() {
             >
               ← 上一页
             </button>
-            <span className="text-sm text-gray-400">
-              第 {page} 页，共 {totalPages} 页
-            </span>
+            <span className="text-sm text-gray-400">第 {page} 页，共 {totalPages} 页</span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
