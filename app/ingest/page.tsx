@@ -106,6 +106,23 @@ export default function IngestPage() {
 
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
 
+  // ── Realtime subscription ─────────────────────────────
+  useEffect(() => {
+    const channel = supabase
+      .channel("notes-realtime")
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "notes"
+      }, () => {
+        fetchNotes();
+        setToast("✅ 新笔记已生成");
+        setTimeout(() => setToast(null), 6000);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchNotes]);
+
   // ── Delete note ───────────────────────────────────────
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -200,8 +217,8 @@ export default function IngestPage() {
         throw new Error(msg);
       }
 
-      setToast("✅ 笔记已生成并加入知识库");
-      setTimeout(() => setToast(null), 3000);
+      setToast("✅ 内容已保存，笔记后台生成中...");
+      setTimeout(() => setToast(null), 6000);
       await fetchNotes();
       const noteId = (data.note as { id?: string } | null)?.id;
       if (noteId) setExpanded(noteId);
