@@ -125,8 +125,8 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
       {/* Footer */}
       <div className="flex-shrink-0 border-t border-gray-100 px-2 py-1.5 relative" ref={menuRef}>
         {/* 用户菜单弹窗 */}
-        {menuOpen && !collapsed && (
-          <div className="absolute bottom-full left-0 right-0 mb-1 mx-2 bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 z-50">
+        {menuOpen && (
+          <div className="bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 z-50 w-52" style={{ position: 'fixed', bottom: '60px', left: collapsed ? '60px' : '228px' }}>
             <div className="px-3 py-2 border-b border-gray-100 mb-1">
               <div className="text-sm font-medium text-gray-900">{displayName}</div>
               <div className="text-xs text-gray-400 mt-0.5">{userEmail}</div>
@@ -159,7 +159,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
 
         {/* 用户行 */}
         <button
-          onClick={(e) => { e.stopPropagation(); if (!collapsed) setMenuOpen(!menuOpen); }}
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
           className={`w-full flex items-center gap-2 px-2 h-10 rounded-md hover:bg-white transition-colors ${collapsed ? "justify-center px-0" : ""}`}
         >
           <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-700 flex-shrink-0">
