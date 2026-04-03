@@ -312,8 +312,8 @@ export default function IngestPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-gray-300 mt-1">
-                当前：{TEMPLATES.find(t => t.id === template)?.desc}
+              <p className="text-xs text-gray-300 mt-1.5">
+                {TEMPLATES.find(t => t.id === template)?.desc}
               </p>
             </div>
 
