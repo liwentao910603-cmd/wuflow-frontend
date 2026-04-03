@@ -67,6 +67,7 @@ export default function QAPage() {
       let accContent = "";
       let sources: Source[] = [];
       let has_context = true;
+      let streamStarted = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -93,6 +94,10 @@ export default function QAPage() {
                 if (last?.role === "assistant") {
                   arr[arr.length - 1] = { ...last, content: accContent };
                 } else {
+                  if (!streamStarted) {
+                    streamStarted = true;
+                    setLoading(false);
+                  }
                   arr.push({ role: "assistant", content: accContent, sources, has_context: true });
                 }
                 return arr;
