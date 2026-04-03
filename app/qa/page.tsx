@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Sidebar from "@/components/Sidebar";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:9000/api/v1";
 const supabase = createClient();
@@ -140,7 +141,9 @@ export default function QAPage() {
   }
 
   return (
-    <div style={s.page}>
+    <div style={{ ...s.page, flexDirection: "row" }}>
+      <Sidebar userEmail={userEmail ?? ""} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <style>{`
         @keyframes wf-spin{to{transform:rotate(360deg)}}
         @keyframes wf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -148,27 +151,6 @@ export default function QAPage() {
         textarea:focus{outline:none;border-color:#2383E2!important;box-shadow:0 0 0 2px rgba(35,131,226,0.15)}
         .suggest-btn:hover{background:#F0F0EC!important}
       `}</style>
-
-      {/* Nav */}
-      <nav style={s.nav}>
-        <div style={s.navInner}>
-          <a href="/" style={s.brand}>
-            <span style={s.brandIcon}>悟</span>
-            <span style={s.brandName}>WuFlow</span>
-          </a>
-          <div style={s.navLinks}>
-            <a href="/ingest" style={s.navLink}>整理资料</a>
-            <a href="/notes" style={s.navLink}>知识库</a>
-            <span style={{ ...s.navLink, ...s.navActive }}>AI问答</span>
-            {userEmail && (
-              <div style={s.userBar}>
-                <span style={s.userEmail}>{userEmail}</span>
-                <button onClick={handleSignOut} style={s.signOutBtn}>退出</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
 
       {/* Messages */}
       <main style={s.main}>
@@ -264,6 +246,7 @@ export default function QAPage() {
           </button>
         </div>
         <p style={s.barHint}>Enter 发送 · Shift+Enter 换行 · 回答仅基于你的知识库</p>
+      </div>
       </div>
     </div>
   );

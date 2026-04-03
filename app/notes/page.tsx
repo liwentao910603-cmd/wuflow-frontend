@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import Sidebar from "@/components/Sidebar";
 
 interface Note {
   id: string;
@@ -110,30 +111,9 @@ export default function NotesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif" }}>
-      {/* 导航 */}
-      <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-lg font-semibold text-gray-900 tracking-tight">
-          悟流 WuFlow
-        </Link>
-        <div className="flex items-center gap-6 text-sm text-gray-500">
-          <Link href="/ingest" className="hover:text-gray-900 transition-colors">整理资料</Link>
-          <Link href="/notes" className="text-gray-900 font-medium">知识库</Link>
-          <Link href="/qa" className="hover:text-gray-900 transition-colors">AI问答</Link>
-          {userEmail && (
-            <div className="flex items-center gap-3 pl-3 border-l border-gray-100">
-              <span className="text-gray-400 text-xs hidden sm:inline">{userEmail}</span>
-              <button
-                onClick={handleSignOut}
-                className="text-xs text-gray-400 hover:text-gray-900 transition-colors"
-              >
-                退出
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
-
+    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif" }}>
+      <Sidebar userEmail={userEmail ?? ""} />
+      <div className="flex-1 overflow-y-auto bg-white">
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* 整合提示 */}
         <div className="mb-8 bg-gray-50 border border-gray-100 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -335,6 +315,7 @@ export default function NotesPage() {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

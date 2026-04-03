@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import Sidebar from "@/components/Sidebar";
 
 type Tab = "url" | "pdf" | "text";
 type Filter = "all" | "url" | "pdf" | "text";
@@ -247,27 +248,9 @@ export default function IngestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif" }}>
-
-      {/* 导航 */}
-      <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between shrink-0">
-        <Link href="/" className="text-lg font-semibold text-gray-900 tracking-tight">
-          悟流 WuFlow
-        </Link>
-        <div className="flex items-center gap-6 text-sm text-gray-500">
-          <Link href="/ingest" className="text-gray-900 font-medium">整理资料</Link>
-          <Link href="/notes" className="hover:text-gray-900 transition-colors">知识库</Link>
-          <Link href="/qa" className="hover:text-gray-900 transition-colors">AI问答</Link>
-          {userEmail && (
-            <div className="flex items-center gap-3 pl-3 border-l border-gray-100">
-              <span className="text-gray-400 text-xs hidden sm:inline">{userEmail}</span>
-              <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-gray-900 transition-colors">
-                退出
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
+    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif" }}>
+      <Sidebar userEmail={userEmail ?? ""} />
+      <div className="flex-1 flex flex-col overflow-hidden">
 
       {/* 主体：左侧表单 + 右侧知识库 */}
       <div className="flex flex-col lg:flex-row flex-1">
@@ -648,6 +631,7 @@ export default function IngestPage() {
           {toast}
         </div>
       )}
+      </div>
     </div>
   );
 }

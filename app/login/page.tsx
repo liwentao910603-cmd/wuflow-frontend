@@ -35,7 +35,7 @@ export default function LoginPage() {
               : "登录失败，请稍后重试"
           );
         } else {
-          window.location.href = "/ingest";
+          window.location.href = "/dashboard";
         }
       } else {
         console.log("[login] 尝试注册:", email);
