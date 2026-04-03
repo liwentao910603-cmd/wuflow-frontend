@@ -44,10 +44,14 @@ export default function QAPage() {
     setMessages(next); setInput(""); setLoading(true);
     if (textareaRef.current) textareaRef.current.style.height = "44px";
 
+    // 先添加一个空的 assistant 消息用于流式追加
+    const assistantMsg: Message = { role: "assistant", content: "", sources: [], has_context: true };
+    setMessages([...next, assistantMsg]);
+
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }));
       const token = accessToken;
-      const res  = await fetch(`${API}/qa`, {
+      const res = await fetch(`${API}/qa/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,11 +59,72 @@ export default function QAPage() {
         },
         body: JSON.stringify({ question: q, conversation_history: history }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail ?? "请求失败");
-      setMessages([...next, { role: "assistant", content: data.answer, sources: data.sources, has_context: data.has_context }]);
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error((errData as any).detail ?? "请求失败");
+      }
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let accContent = "";
+      let sources: Source[] = [];
+      let has_context = true;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6);
+          if (raw === "[DONE]") break;
+          try {
+            const event = JSON.parse(raw);
+            if (event.type === "sources") {
+              sources = event.data || [];
+              setMessages(prev => {
+                const arr = [...prev];
+                arr[arr.length - 1] = { ...arr[arr.length - 1], sources };
+                return arr;
+              });
+            } else if (event.type === "text") {
+              accContent += event.data;
+              setMessages(prev => {
+                const arr = [...prev];
+                arr[arr.length - 1] = { ...arr[arr.length - 1], content: accContent };
+                return arr;
+              });
+            } else if (event.type === "done") {
+              has_context = event.has_context ?? true;
+              setMessages(prev => {
+                const arr = [...prev];
+                arr[arr.length - 1] = { ...arr[arr.length - 1], has_context };
+                return arr;
+              });
+            } else if (event.type === "error") {
+              throw new Error(event.data);
+            }
+          } catch {
+            // 跳过解析失败的行
+          }
+        }
+      }
     } catch (e: any) {
-      setMessages([...next, { role: "assistant", content: `出错了：${e.message}` }]);
+      setMessages(prev => {
+        const arr = [...prev];
+        // 如果最后一条是空的 assistant 消息，替换它
+        if (arr[arr.length - 1]?.role === "assistant" && !arr[arr.length - 1].content) {
+          arr[arr.length - 1] = { role: "assistant", content: `出错了：${e.message}` };
+        } else {
+          arr.push({ role: "assistant", content: `出错了：${e.message}` });
+        }
+        return arr;
+      });
     } finally {
       setLoading(false);
     }

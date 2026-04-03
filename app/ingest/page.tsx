@@ -108,20 +108,23 @@ export default function IngestPage() {
 
   // ── Realtime subscription ─────────────────────────────
   useEffect(() => {
-    const channel = supabase
-      .channel("notes-realtime")
+    let channel = supabase
+      .channel("notes-realtime-" + Date.now())
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
         table: "notes"
-      }, () => {
+      }, (payload) => {
+        console.log("Realtime INSERT received:", payload);
         fetchNotes();
-        setToast("✅ 新笔记已生成");
+        setToast("✅ 新笔记已生成，知识库已更新");
         setTimeout(() => setToast(null), 6000);
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime subscription status:", status);
+      });
     return () => { supabase.removeChannel(channel); };
-  }, [fetchNotes]);
+  }, []); // 注意：依赖数组改为空数组，fetchNotes 通过闭包调用
 
   // ── Delete note ───────────────────────────────────────
   const handleDelete = async (id: string, e: React.MouseEvent) => {
