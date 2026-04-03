@@ -159,7 +159,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
 
         {/* 用户行 */}
         <button
-          onClick={() => !collapsed && setMenuOpen(!menuOpen)}
+          onClick={(e) => { e.stopPropagation(); if (!collapsed) setMenuOpen(!menuOpen); }}
           className={`w-full flex items-center gap-2 px-2 h-10 rounded-md hover:bg-white transition-colors ${collapsed ? "justify-center px-0" : ""}`}
         >
           <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-700 flex-shrink-0">

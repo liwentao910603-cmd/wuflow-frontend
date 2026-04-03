@@ -65,13 +65,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Noto Sans SC','PingFang SC',sans-serif" }}>
+    <div className="flex h-screen overflow-hidden bg-gray-50/30" style={{ fontFamily: "'Noto Sans SC','PingFang SC',sans-serif" }}>
       <Sidebar userEmail={userEmail} />
       <main className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-3xl mx-auto px-8 py-8">
+        <div className="max-w-2xl mx-auto px-10 py-12">
           {/* 问候 */}
-          <h1 className="text-2xl font-medium text-gray-900 mb-1">
-            {getGreeting()}，{displayName}
+          <h1 className="text-3xl font-semibold text-gray-900 mb-2">
+            {getGreeting()}，{displayName.length > 8 ? "同学" : displayName}
           </h1>
           <p className="text-sm text-gray-400 mb-6">
             今天学了什么？知识库里有 {notesTotal} 篇笔记在等你。
@@ -87,7 +87,7 @@ export default function DashboardPage() {
             ].map((s, i) => (
               <div key={i} className="bg-gray-50 rounded-lg p-3">
                 <div className="text-xs text-gray-400 mb-1">{s.label}</div>
-                <div className={`text-xl font-medium ${s.red ? "text-red-500" : "text-gray-900"}`}>{s.value}</div>
+                <div className={`text-2xl font-medium ${s.red ? "text-red-500" : "text-gray-900"}`}>{s.value}</div>
                 <div className="text-xs text-gray-300 mt-0.5">{s.hint}</div>
               </div>
             ))}
