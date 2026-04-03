@@ -1,18 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 const supabase = createClient();
 
 export default function Home() {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('idle');
-  const [message, setMessage] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState('');
-  const inputRef = useRef(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -20,23 +16,6 @@ export default function Home() {
       setUserEmail(session?.user?.email ?? '');
     });
   }, []);
-
-  const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-
-  const handleSubmit = async () => {
-    const trimmed = email.trim();
-    if (!trimmed || !isValidEmail(trimmed)) {
-      setStatus('error'); setMessage('请输入有效的邮箱地址'); return;
-    }
-    setStatus('loading');
-    const { error } = await supabase.from('waitlist').insert([{ email: trimmed }]);
-    if (error) {
-      setStatus('error');
-      setMessage(error.code === '23505' ? '这个邮箱已经在名单里了 😊' : '提交失败，请稍后再试');
-    } else {
-      setStatus('success'); setMessage('🎉 已加入！我们会第一时间通知你'); setEmail('');
-    }
-  };
 
   return (
     <main className="min-h-screen bg-white text-gray-900" style={{ fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif" }}>
@@ -71,9 +50,6 @@ export default function Home() {
 
       {/* 主标题 */}
       <section className="max-w-3xl mx-auto px-6 py-24 text-center">
-        <div className="inline-block border border-gray-200 text-gray-500 text-xs px-3 py-1.5 rounded-full mb-8">
-          🚀 正在开发中，欢迎提前加入等待名单
-        </div>
         <h1 className="text-5xl font-bold mb-6 leading-tight tracking-tight">
           让知识真正<span className="border-b-4 border-gray-900">流动</span>起来
         </h1>
@@ -94,38 +70,18 @@ export default function Home() {
             <p className="text-xs text-gray-400">已登录为 {userEmail}</p>
           </div>
         ) : (
-          <>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto">
-              <input
-                ref={inputRef}
-                type="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setStatus('idle'); setMessage(''); }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                placeholder="输入你的邮箱，提前加入等待名单"
-                disabled={status === 'loading' || status === 'success'}
-                className="border border-gray-200 text-gray-900 px-4 py-3 rounded-lg flex-1 text-sm focus:outline-none focus:border-gray-400 disabled:opacity-50 transition-colors"
-              />
-              <button
-                onClick={handleSubmit}
-                disabled={status === 'loading' || status === 'success'}
-                className="bg-gray-900 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-              >
-                {status === 'loading' ? '提交中...' : status === 'success' ? '已加入 ✓' : '加入等待名单 →'}
-              </button>
-            </div>
-            <p className="mt-4 text-sm text-gray-400">
+          <div className="flex flex-col items-center gap-4">
+            <button
+              onClick={() => { window.location.href = "/login"; }}
+              className="bg-gray-900 hover:bg-gray-700 text-white px-8 py-3 rounded-lg text-sm font-medium transition-colors"
+            >
+              免费开始使用 →
+            </button>
+            <p className="text-xs text-gray-400">
               已有账号？{' '}
-              <Link href="/login" className="text-gray-900 hover:underline font-medium">
-                立即登录
-              </Link>
+              <a href="/login" className="text-gray-900 hover:underline font-medium">立即登录</a>
             </p>
-            {message && (
-              <p className={`mt-3 text-sm ${status === 'success' ? 'text-green-600' : 'text-red-500'}`}>
-                {message}
-              </p>
-            )}
-          </>
+          </div>
         )}
       </section>
 
