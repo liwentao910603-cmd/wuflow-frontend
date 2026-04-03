@@ -91,6 +91,7 @@ export default function IngestPage() {
   };
 
   // ── Fetch notes ───────────────────────────────────────
+  const fetchNotesRef = useRef<() => void>(() => {});
   const fetchNotes = useCallback(async () => {
     setNotesLoading(true);
     try {
@@ -115,6 +116,7 @@ export default function IngestPage() {
   }, [notesFilter]);
 
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
+  useEffect(() => { fetchNotesRef.current = fetchNotes; }, [fetchNotes]);
 
   // ── Realtime subscription ─────────────────────────────
   useEffect(() => {
@@ -126,12 +128,12 @@ export default function IngestPage() {
         table: "notes"
       }, (payload) => {
         console.log("Realtime INSERT received:", payload);
-        fetchNotes();
+        fetchNotesRef.current();
         setToast("✅ 新笔记已生成，知识库已更新");
         setTimeout(() => setToast(null), 6000);
       })
       .subscribe((status) => {
-        console.log("Realtime subscription status:", status);
+        console.log("[Realtime] status:", status);
       });
     return () => { supabase.removeChannel(channel); };
   }, []); // 注意：依赖数组改为空数组，fetchNotes 通过闭包调用
