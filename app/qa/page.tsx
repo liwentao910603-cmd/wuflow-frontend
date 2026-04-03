@@ -185,7 +185,7 @@ export default function QAPage() {
               <h2 style={s.emptyTitle}>问问你的知识库</h2>
               <p style={s.emptySub}>基于你整理的笔记回答，每条回答都标注来源</p>
               <div style={s.suggests}>
-                {["这些笔记的核心观点是什么？", "有哪些可以立刻执行的行动建议？", "人工智能有哪些主要应用领域？"].map((t, i) => (
+                {["帮我总结知识库的主要内容", "有哪些值得深入学习的概念？", "给我列出所有笔记的主题"].map((t, i) => (
                   <button key={i} className="suggest-btn" style={s.suggest} onClick={() => setInput(t)}>
                     {t}
                   </button>
