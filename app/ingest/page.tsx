@@ -12,7 +12,7 @@ const TEMPLATES: { id: Template; label: string; icon: string; desc: string }[] =
   { id: "general", icon: "📄", label: "通用整理",   desc: "适合大多数文章" },
   { id: "tech",    icon: "⚙️", label: "技术文章",   desc: "AI/编程/产品技术" },
   { id: "paper",   icon: "📚", label: "论文速读",   desc: "学术论文专用" },
-  { id: "video",   icon: "🎥", label: "视频笔记",   desc: "粘贴字幕文本" },
+  { id: "video",   icon: "🎥", label: "视频笔记",   desc: "请粘贴视频字幕/文字稿，视频URL整理功能开发中" },
   { id: "meeting", icon: "📋", label: "会议/播客",  desc: "会议记录/文字稿" },
 ];
 
@@ -333,6 +333,11 @@ export default function IngestPage() {
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 />
                 <p className="text-xs text-gray-400 mt-1.5">少数派、知乎、微信公众号等中文网站效果最佳</p>
+                {template === "video" && (
+                  <p className="text-xs text-amber-500 mt-1">
+                    💡 视频笔记建议切换到「文本」Tab，粘贴视频字幕或文字稿效果更好；视频URL直接整理功能开发中
+                  </p>
+                )}
               </div>
             )}
 
@@ -421,7 +426,7 @@ export default function IngestPage() {
                   <textarea
                     value={textContent}
                     onChange={(e) => setTextContent(e.target.value)}
-                    placeholder="粘贴你想整理的文章、笔记、文字..."
+                    placeholder={template === "video" ? "粘贴视频字幕文本或文字稿内容..." : "粘贴你想整理的文章、笔记、文字..."}
                     rows={7}
                     className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-400 transition-colors resize-none"
                   />
