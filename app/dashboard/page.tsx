@@ -68,24 +68,24 @@ export default function DashboardPage() {
     <div className="flex h-screen overflow-hidden bg-gray-50/30" style={{ fontFamily: "'Noto Sans SC','PingFang SC',sans-serif" }}>
       <Sidebar userEmail={userEmail} />
       <main className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-2xl mx-auto px-10 py-12">
+        <div className="max-w-3xl mx-auto px-8 py-8">
           {/* 问候 */}
           <h1 className="text-3xl font-semibold text-gray-900 mb-2">
             {getGreeting()}，{displayName.length > 8 ? "同学" : displayName}
           </h1>
-          <p className="text-sm text-gray-400 mb-6">
+          <p className="text-sm text-gray-400 mb-4">
             今天学了什么？知识库里有 {notesTotal} 篇笔记在等你。
           </p>
 
           {/* 统计 */}
-          <div className="grid grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-4 gap-2 mb-4">
             {[
               { label: "知识库笔记", value: notesTotal, hint: "篇" },
               { label: "今日待复习", value: 0, hint: "篇", red: true },
               { label: "连续学习", value: 0, hint: "天" },
               { label: "本周时长", value: 0, hint: "小时" },
             ].map((s, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-3">
+              <div key={i} className="bg-gray-50 rounded-lg p-2.5">
                 <div className="text-xs text-gray-400 mb-1">{s.label}</div>
                 <div className={`text-2xl font-medium ${s.red ? "text-red-500" : "text-gray-900"}`}>{s.value}</div>
                 <div className="text-xs text-gray-300 mt-0.5">{s.hint}</div>
@@ -95,14 +95,14 @@ export default function DashboardPage() {
 
           {/* 快捷入口 */}
           <div className="text-xs font-medium text-gray-400 mb-2 tracking-wide">快捷入口</div>
-          <div className="grid grid-cols-3 gap-2 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-4">
             {[
               { href: "/ingest", icon: "📥", title: "整理新资料", desc: "URL / PDF / 文本" },
               { href: "/qa", icon: "💬", title: "AI 问答", desc: "问问你的知识库" },
               { href: "/notes", icon: "📚", title: "浏览知识库", desc: `全部 ${notesTotal} 篇笔记` },
             ].map((a) => (
               <Link key={a.href} href={a.href}
-                className="bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors"
+                className="bg-white border border-gray-100 rounded-xl p-3 hover:border-gray-200 transition-colors"
               >
                 <div className="text-base mb-1.5">{a.icon}</div>
                 <div className="text-sm font-medium text-gray-900 mb-0.5">{a.title}</div>
@@ -117,7 +117,7 @@ export default function DashboardPage() {
               <div className="text-xs font-medium text-gray-400 mb-2 tracking-wide">最近整理</div>
               <div className="grid grid-cols-3 gap-2">
                 {recentNotes.map((note) => (
-                  <div key={note.id} className="bg-white border border-gray-100 rounded-xl p-3 hover:border-gray-200 transition-colors cursor-pointer">
+                  <div key={note.id} className="bg-white border border-gray-100 rounded-xl p-2.5 hover:border-gray-200 transition-colors cursor-pointer">
                     <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium mb-2 ${tagColor[note.source_type] || "bg-gray-100 text-gray-500"}`}>
                       {tagLabel[note.source_type] || note.source_type}
                     </span>
