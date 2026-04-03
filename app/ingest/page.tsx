@@ -6,6 +6,15 @@ import { createClient } from "@/lib/supabase/client";
 
 type Tab = "url" | "pdf" | "text";
 type Filter = "all" | "url" | "pdf" | "text";
+type Template = "general" | "tech" | "paper" | "video" | "meeting";
+
+const TEMPLATES: { id: Template; label: string; icon: string; desc: string }[] = [
+  { id: "general", icon: "📄", label: "通用整理",   desc: "适合大多数文章" },
+  { id: "tech",    icon: "⚙️", label: "技术文章",   desc: "AI/编程/产品技术" },
+  { id: "paper",   icon: "📚", label: "论文速读",   desc: "学术论文专用" },
+  { id: "video",   icon: "🎥", label: "视频笔记",   desc: "粘贴字幕文本" },
+  { id: "meeting", icon: "📋", label: "会议/播客",  desc: "会议记录/文字稿" },
+];
 
 interface Note {
   id: string;
@@ -43,6 +52,7 @@ export default function IngestPage() {
 
   // ── Form ─────────────────────────────────────────────
   const [tab, setTab] = useState<Tab>("url");
+  const [template, setTemplate] = useState<Template>("general");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -173,13 +183,14 @@ export default function IngestPage() {
         res = await fetch(`${API}/ingest`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeader },
-          body: JSON.stringify({ url: url.trim() }),
+          body: JSON.stringify({ url: url.trim(), template }),
         });
       } else if (tab === "pdf") {
         if (!pdfFile) throw new Error("请选择 PDF 文件");
         const form = new FormData();
         form.append("file", pdfFile);
         if (pdfTitle.trim()) form.append("title", pdfTitle.trim());
+        form.append("template", template);
         res = await fetch(`${API}/ingest/pdf`, {
           method: "POST",
           headers: { ...authHeader },
@@ -195,6 +206,7 @@ export default function IngestPage() {
             title: textTitle.trim(),
             text: textContent.trim(),
             source_url: textSource.trim() || "",
+            template,
           }),
         });
       }
@@ -279,6 +291,31 @@ export default function IngestPage() {
               </button>
             ))}
           </div>
+
+          {/* 模板选择 */}
+            <div className="mb-4">
+              <label className="block text-xs text-gray-400 mb-2">整理模板</label>
+              <div className="grid grid-cols-5 gap-1">
+                {TEMPLATES.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTemplate(t.id)}
+                    title={t.desc}
+                    className={`flex flex-col items-center gap-0.5 px-1 py-2 rounded-lg text-center transition-all ${
+                      template === t.id
+                        ? "bg-gray-900 text-white"
+                        : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="text-base">{t.icon}</span>
+                    <span className="text-xs font-medium leading-tight">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-300 mt-1">
+                当前：{TEMPLATES.find(t => t.id === template)?.desc}
+              </p>
+            </div>
 
           <div className="space-y-4">
             {/* URL Tab */}
