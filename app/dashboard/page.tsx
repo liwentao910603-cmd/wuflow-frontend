@@ -65,69 +65,93 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50/30" style={{ fontFamily: "'Noto Sans SC','PingFang SC',sans-serif" }}>
+    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}>
       <Sidebar userEmail={userEmail} />
-      <main className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-3xl mx-auto px-8 py-8">
-          {/* 问候 */}
-          <h1 className="text-3xl font-semibold text-gray-900 mb-2">
-            {getGreeting()}，{displayName.length > 8 ? "同学" : displayName}
-          </h1>
-          <p className="text-sm text-gray-400 mb-4">
-            今天学了什么？知识库里有 {notesTotal} 篇笔记在等你。
-          </p>
+      <main className="flex-1 overflow-y-auto" style={{ background: '#f9f9f8' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 48px 48px' }}>
 
-          {/* 统计 */}
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          {/* 问候 */}
+          <div style={{ marginBottom: 40 }}>
+            <h1 style={{ fontSize: 30, fontWeight: 600, color: '#111', letterSpacing: '-0.5px', margin: '0 0 6px' }}>
+              {getGreeting()}，{displayName.length > 8 ? '同学' : displayName} 👋
+            </h1>
+            <p style={{ fontSize: 15, color: '#888', margin: 0 }}>
+              今天学了什么？知识库里有 {notesTotal} 篇笔记在等你。
+            </p>
+          </div>
+
+          {/* 统计卡片 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 40 }}>
             {[
-              { label: "知识库笔记", value: notesTotal, hint: "篇" },
-              { label: "今日待复习", value: 0, hint: "篇", red: true },
-              { label: "连续学习", value: 0, hint: "天" },
-              { label: "本周时长", value: 0, hint: "小时" },
+              { label: '知识库笔记', value: notesTotal, unit: '篇', hint: '累计整理' },
+              { label: '今日待复习', value: 0, unit: '篇', hint: '基于遗忘曲线', red: true },
+              { label: '连续学习', value: 0, unit: '天', hint: '保持节奏' },
+              { label: '本周时长', value: 0, unit: '小时', hint: '专注学习' },
             ].map((s, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-2.5">
-                <div className="text-xs text-gray-400 mb-1">{s.label}</div>
-                <div className={`text-2xl font-medium ${s.red ? "text-red-500" : "text-gray-900"}`}>{s.value}</div>
-                <div className="text-xs text-gray-300 mt-0.5">{s.hint}</div>
+              <div key={i} style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '20px 22px' }}>
+                <div style={{ fontSize: 12, color: '#999', marginBottom: 10, fontWeight: 500 }}>{s.label}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
+                  <span style={{ fontSize: 32, fontWeight: 600, color: s.red ? '#e53e3e' : '#111', letterSpacing: '-1px' }}>{s.value}</span>
+                  <span style={{ fontSize: 13, color: '#bbb' }}>{s.unit}</span>
+                </div>
+                <div style={{ fontSize: 12, color: '#bbb' }}>{s.hint}</div>
               </div>
             ))}
           </div>
 
           {/* 快捷入口 */}
-          <div className="text-xs font-medium text-gray-400 mb-2 tracking-wide">快捷入口</div>
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {[
-              { href: "/ingest", icon: "📥", title: "整理新资料", desc: "URL / PDF / 文本" },
-              { href: "/qa", icon: "💬", title: "AI 问答", desc: "问问你的知识库" },
-              { href: "/notes", icon: "📚", title: "浏览知识库", desc: `全部 ${notesTotal} 篇笔记` },
-            ].map((a) => (
-              <Link key={a.href} href={a.href}
-                className="bg-white border border-gray-100 rounded-xl p-3 hover:border-gray-200 transition-colors"
-              >
-                <div className="text-base mb-1.5">{a.icon}</div>
-                <div className="text-sm font-medium text-gray-900 mb-0.5">{a.title}</div>
-                <div className="text-xs text-gray-400">{a.desc}</div>
-              </Link>
-            ))}
+          <div style={{ marginBottom: 40 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#999', letterSpacing: '0.5px', marginBottom: 14, textTransform: 'uppercase' }}>快捷入口</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
+              {[
+                { href: '/ingest', icon: '📥', title: '整理新资料', desc: '粘贴 URL、上传 PDF 或文本', color: '#f0f4ff' },
+                { href: '/qa', icon: '💬', title: 'AI 问答', desc: '基于你的知识库智能回答', color: '#f0fff4' },
+                { href: '/notes', icon: '📚', title: '浏览知识库', desc: `已整理 ${notesTotal} 篇笔记`, color: '#fff8f0' },
+              ].map((a) => (
+                <Link key={a.href} href={a.href} style={{ textDecoration: 'none' }}>
+                  <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '22px 22px', cursor: 'pointer', transition: 'border-color .15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#d0d0d0')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#ebebeb')}
+                  >
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: a.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{a.icon}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 5 }}>{a.title}</div>
+                    <div style={{ fontSize: 13, color: '#999', lineHeight: 1.5 }}>{a.desc}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* 最近整理 */}
           {recentNotes.length > 0 && (
-            <>
-              <div className="text-xs font-medium text-gray-400 mb-2 tracking-wide">最近整理</div>
-              <div className="grid grid-cols-3 gap-2">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#999', letterSpacing: '0.5px', textTransform: 'uppercase' }}>最近整理</div>
+                <Link href="/notes" style={{ fontSize: 13, color: '#888', textDecoration: 'none' }}>查看全部 →</Link>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
                 {recentNotes.map((note) => (
-                  <div key={note.id} className="bg-white border border-gray-100 rounded-xl p-2.5 hover:border-gray-200 transition-colors cursor-pointer">
-                    <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium mb-2 ${tagColor[note.source_type] || "bg-gray-100 text-gray-500"}`}>
-                      {tagLabel[note.source_type] || note.source_type}
-                    </span>
-                    <div className="text-xs font-medium text-gray-900 leading-snug mb-1 line-clamp-2">{note.title}</div>
-                    <div className="text-xs text-gray-300">{formatDate(note.created_at)}</div>
-                  </div>
+                  <Link key={note.id} href="/notes" style={{ textDecoration: 'none' }}>
+                    <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '18px 20px', cursor: 'pointer' }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#d0d0d0')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#ebebeb')}
+                    >
+                      <span style={{
+                        display: 'inline-block', fontSize: 11, padding: '3px 9px', borderRadius: 99, marginBottom: 10, fontWeight: 500,
+                        background: note.source_type === 'url' ? '#e8f0fe' : note.source_type === 'pdf' ? '#fff3e0' : '#e8f5e9',
+                        color: note.source_type === 'url' ? '#1a56db' : note.source_type === 'pdf' ? '#e65100' : '#2e7d32',
+                      }}>
+                        {note.source_type === 'url' ? '网页' : note.source_type === 'pdf' ? 'PDF' : '文本'}
+                      </span>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#111', lineHeight: 1.5, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{note.title}</div>
+                      <div style={{ fontSize: 12, color: '#bbb' }}>{formatDate(note.created_at)}</div>
+                    </div>
+                  </Link>
                 ))}
               </div>
-            </>
+            </div>
           )}
+
         </div>
       </main>
     </div>
