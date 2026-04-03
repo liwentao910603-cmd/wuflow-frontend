@@ -317,7 +317,7 @@ export default function IngestPage() {
                   className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-400 transition-colors"
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 />
-                <p className="text-xs text-gray-400 mt-1.5">少数派、知乎、微信公众号等中文网站效果最佳</p>
+                <p className="text-xs text-gray-400 mt-1.5">少数派、微信公众号、36氪、简书、掘金等中文网站效果最佳</p>
                 {template === "video" && (
                   <p className="text-xs text-amber-500 mt-1">
                     💡 视频笔记建议切换到「文本」Tab，粘贴视频字幕或文字稿效果更好；视频URL直接整理功能开发中
