@@ -52,7 +52,6 @@ export default function Home() {
             了解更多 ↓
           </a>
         </div>
-        <p style={{ marginTop: 20, fontSize: 13, color: '#aaa' }}>免费使用 · 无需信用卡</p>
       </section>
 
       {/* 分隔 */}
@@ -145,7 +144,6 @@ export default function Home() {
         <h2 style={{ fontSize: 36, fontWeight: 700, color: '#fff', margin: '0 0 16px', letterSpacing: '-1px' }}>
           开始构建你的私人知识库
         </h2>
-        <p style={{ fontSize: 16, color: '#888', margin: '0 0 36px' }}>免费使用，无需信用卡</p>
         <a href="/login" style={{ background: '#fff', color: '#111', padding: '14px 32px', borderRadius: 10, fontSize: 15, fontWeight: 600, textDecoration: 'none', display: 'inline-block' }}>
           免费开始使用 →
         </a>
