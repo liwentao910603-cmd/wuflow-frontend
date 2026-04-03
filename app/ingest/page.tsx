@@ -32,6 +32,7 @@ interface Note {
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const supabase = createClient();
+const PAGE_SIZE = 20;
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("zh-CN", { month: "long", day: "numeric" });
@@ -76,6 +77,7 @@ export default function IngestPage() {
   const [notesTotal, setNotesTotal] = useState(0);
   const [notesLoading, setNotesLoading] = useState(true);
   const [notesFilter, setNotesFilter] = useState<Filter>("all");
+  const [notesPage, setNotesPage] = useState(1);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -97,8 +99,8 @@ export default function IngestPage() {
     setNotesLoading(true);
     try {
       const params = new URLSearchParams({
-        page: "1",
-        page_size: "20",
+        page: notesPage.toString(),
+        page_size: PAGE_SIZE.toString(),
         ...(notesFilter !== "all" ? { source_type: notesFilter } : {}),
       });
       const { data: { session } } = await supabase.auth.getSession();
@@ -114,7 +116,7 @@ export default function IngestPage() {
     } finally {
       setNotesLoading(false);
     }
-  }, [notesFilter]);
+  }, [notesFilter, notesPage]);
 
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
   useEffect(() => { fetchNotesRef.current = fetchNotes; }, [fetchNotes]);
@@ -253,7 +255,7 @@ export default function IngestPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
 
       {/* 主体：左侧表单 + 右侧知识库 */}
-      <div className="flex flex-col lg:flex-row flex-1">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
 
         {/* ── 左侧：整理表单 ─────────────────────────────── */}
         <div className="w-full lg:w-[440px] shrink-0 px-6 py-8 border-b lg:border-b-0 lg:border-r border-gray-100">
@@ -457,7 +459,7 @@ export default function IngestPage() {
         </div>
 
         {/* ── 右侧：知识库列表 ──────────────────────────── */}
-        <div className="flex-1 min-w-0 px-6 py-8 bg-gray-50/40">
+        <div className="flex-1 min-w-0 px-6 py-8 bg-gray-50/40 overflow-y-auto">
           {/* 标题 */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -478,7 +480,7 @@ export default function IngestPage() {
             {(["all", "url", "pdf", "text"] as Filter[]).map((f) => (
               <button
                 key={f}
-                onClick={() => setNotesFilter(f)}
+                onClick={() => { setNotesFilter(f); setNotesPage(1); }}
                 className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
                   notesFilter === f
                     ? "bg-gray-900 text-white"
@@ -615,10 +617,28 @@ export default function IngestPage() {
                 </div>
               ))}
 
-              {notesTotal > 20 && (
-                <p className="text-xs text-center text-gray-300 pt-2">
-                  显示最新 20 条，共 {notesTotal} 条
-                </p>
+              {notesTotal > PAGE_SIZE && (
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
+                  <span className="text-xs text-gray-400">
+                    共 {notesTotal} 条，第 {notesPage} / {Math.ceil(notesTotal / PAGE_SIZE)} 页
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setNotesPage(p => Math.max(1, p - 1))}
+                      disabled={notesPage === 1}
+                      className="px-3 py-1.5 text-xs rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      上一页
+                    </button>
+                    <button
+                      onClick={() => setNotesPage(p => Math.min(Math.ceil(notesTotal / PAGE_SIZE), p + 1))}
+                      disabled={notesPage >= Math.ceil(notesTotal / PAGE_SIZE)}
+                      className="px-3 py-1.5 text-xs rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      下一页
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           )}
