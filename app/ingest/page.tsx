@@ -129,7 +129,7 @@ export default function IngestPage() {
         table: "notes"
       }, (payload) => {
         console.log("Realtime INSERT received:", payload);
-        fetchNotesRef.current();
+        setTimeout(() => fetchNotesRef.current(), 500);
         setToast("✅ 新笔记已生成，知识库已更新");
         setTimeout(() => setToast(null), 6000);
       })
