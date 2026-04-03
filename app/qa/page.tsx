@@ -44,10 +44,6 @@ export default function QAPage() {
     setMessages(next); setInput(""); setLoading(true);
     if (textareaRef.current) textareaRef.current.style.height = "44px";
 
-    // 先添加一个空的 assistant 消息用于流式追加
-    const assistantMsg: Message = { role: "assistant", content: "", sources: [], has_context: true };
-    setMessages([...next, assistantMsg]);
-
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }));
       const token = accessToken;
@@ -87,16 +83,18 @@ export default function QAPage() {
             const event = JSON.parse(raw);
             if (event.type === "sources") {
               sources = event.data || [];
-              setMessages(prev => {
-                const arr = [...prev];
-                arr[arr.length - 1] = { ...arr[arr.length - 1], sources };
-                return arr;
-              });
+              // sources 先到时，message 还没创建，不 setMessages，等 text 事件时一起带入
             } else if (event.type === "text") {
               accContent += event.data;
               setMessages(prev => {
                 const arr = [...prev];
-                arr[arr.length - 1] = { ...arr[arr.length - 1], content: accContent };
+                const last = arr[arr.length - 1];
+                // 如果最后一条已经是 assistant 消息就更新，否则新增
+                if (last?.role === "assistant") {
+                  arr[arr.length - 1] = { ...last, content: accContent };
+                } else {
+                  arr.push({ role: "assistant", content: accContent, sources, has_context: true });
+                }
                 return arr;
               });
             } else if (event.type === "done") {
