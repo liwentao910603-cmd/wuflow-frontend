@@ -48,10 +48,10 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
   ];
 
   const learnItems = [
-    { href: "/review", label: "复习提醒", badge: 0, icon: (
+    { href: "#", label: "复习提醒", badge: 0, icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     )},
-    { href: "/stats", label: "学习统计", icon: (
+    { href: "#", label: "学习统计", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     )},
   ];
@@ -105,12 +105,12 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
 
         {learnItems.map((item) => (
           <Link
-            key={item.href}
+            key={item.label}
             href={item.href}
-            className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 transition-colors whitespace-nowrap ${
-              pathname === item.href
-                ? "bg-white text-gray-900 font-medium"
-                : "text-gray-500 hover:bg-white hover:text-gray-900"
+            title="即将上线"
+            onClick={(e) => e.preventDefault()}
+            className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 transition-colors whitespace-nowrap opacity-50 cursor-default ${
+              "text-gray-500"
             } ${collapsed ? "justify-center px-0" : ""}`}
           >
             <span className="flex-shrink-0">{item.icon}</span>
