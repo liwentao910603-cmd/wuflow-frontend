@@ -212,7 +212,7 @@ export default function NotesPage() {
                       <button
                         onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === note.id ? null : note.id); }}
                         className="text-gray-300 hover:text-gray-500 transition-colors"
-                        style={{ fontSize: 12, letterSpacing: '-1px', padding: '2px 4px', lineHeight: 1 }}
+                        style={{ fontSize: 11, letterSpacing: '-2px', padding: '2px 2px', lineHeight: 1 }}
                       >
                         ···
                       </button>
