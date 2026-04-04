@@ -83,18 +83,21 @@ export default function DashboardPage() {
           {/* 统计卡片 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 40 }}>
             {[
-              { label: '知识库笔记', value: notesTotal, unit: '篇', hint: '累计整理' },
-              { label: '今日待复习', value: 0, unit: '篇', hint: '基于遗忘曲线', red: true },
-              { label: '连续学习', value: 0, unit: '天', hint: '保持节奏' },
-              { label: '本周时长', value: 0, unit: '小时', hint: '专注学习' },
+              { label: '知识库笔记', value: notesTotal, unit: '篇', hint: '累计整理', emptyHint: '整理第一篇笔记开始记录 →' },
+              { label: '今日待复习', value: 0, unit: '篇', hint: '基于遗忘曲线', red: true, emptyHint: '复习功能即将上线' },
+              { label: '连续学习', value: 0, unit: '天', hint: '保持节奏', emptyHint: '每天整理一篇来打卡' },
+              { label: '本周时长', value: 0, unit: '小时', hint: '专注学习', emptyHint: '开始第一次学习' },
             ].map((s, i) => (
               <div key={i} style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, color: '#999', marginBottom: 10, fontWeight: 500 }}>{s.label}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-                  <span style={{ fontSize: 32, fontWeight: 600, color: s.red ? '#e53e3e' : '#111', letterSpacing: '-1px' }}>{s.value}</span>
+                  <span style={{ fontSize: 32, fontWeight: 600, color: s.value === 0 ? '#ddd' : (s.red ? '#e53e3e' : '#111'), letterSpacing: '-1px' }}>{s.value}</span>
                   <span style={{ fontSize: 13, color: '#bbb' }}>{s.unit}</span>
                 </div>
-                <div style={{ fontSize: 12, color: '#bbb' }}>{s.hint}</div>
+                {s.value === 0
+                  ? <div style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{s.emptyHint}</div>
+                  : <div style={{ fontSize: 12, color: '#bbb' }}>{s.hint}</div>
+                }
               </div>
             ))}
           </div>
@@ -123,7 +126,7 @@ export default function DashboardPage() {
           </div>
 
           {/* 最近整理 */}
-          {recentNotes.length > 0 && (
+          {recentNotes.length > 0 ? (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#999', letterSpacing: '0.5px', textTransform: 'uppercase' }}>最近整理</div>
@@ -149,6 +152,13 @@ export default function DashboardPage() {
                   </Link>
                 ))}
               </div>
+            </div>
+          ) : !loading && (
+            <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '32px', textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📥</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 8 }}>还没有笔记</div>
+              <div style={{ fontSize: 13, color: '#999', marginBottom: 20 }}>整理第一篇资料，开始构建你的专属知识库</div>
+              <a href="/ingest" style={{ background: '#111', color: '#fff', padding: '10px 22px', borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>去整理资料 →</a>
             </div>
           )}
 
