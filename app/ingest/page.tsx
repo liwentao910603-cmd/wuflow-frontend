@@ -82,6 +82,7 @@ export default function IngestPage() {
   const [notesPage, setNotesPage] = useState(1);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   // ── Init ─────────────────────────────────────────────
   useEffect(() => {
@@ -548,7 +549,7 @@ export default function IngestPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2" onClick={() => setOpenMenu(null)}>
               {notes.map((note) => (
                 <div
                   key={note.id}
@@ -570,13 +571,29 @@ export default function IngestPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0 mt-0.5">
-                      <button
-                        onClick={(e) => handleDelete(note.id, e)}
-                        disabled={deleting === note.id}
-                        className="text-gray-300 hover:text-red-400 transition-colors text-xs"
-                      >
-                        {deleting === note.id ? "..." : "删除"}
-                      </button>
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === note.id ? null : note.id); }}
+                          className="text-gray-300 hover:text-gray-500 transition-colors"
+                          style={{ fontSize: 10, letterSpacing: '-3px', padding: '1px 1px', lineHeight: 1 }}
+                        >
+                          ···
+                        </button>
+                        {openMenu === note.id && (
+                          <div
+                            style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: 100, padding: '4px' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={(e) => { setOpenMenu(null); handleDelete(note.id, e); }}
+                              disabled={deleting === note.id}
+                              className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                            >
+                              {deleting === note.id ? '删除中...' : '删除'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <span className="text-gray-300 text-xs select-none">
                         {expanded === note.id ? "▲" : "▼"}
                       </span>
