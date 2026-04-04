@@ -144,6 +144,32 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Pricing placeholder */}
+      <div id="pricing" />
+
+      {/* FAQ */}
+      <section id="faq" style={{ background: '#fff', padding: '80px 40px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 32, fontWeight: 700, color: '#111', letterSpacing: '-1px', textAlign: 'center', margin: '0 0 8px' }}>常见问题</h2>
+          <p style={{ color: '#888', textAlign: 'center', fontSize: 15, margin: '0 0 48px' }}>有疑问？这里有答案</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {[
+              { q: '我的数据安全吗？', a: '你的笔记仅对你可见，采用行级安全隔离（RLS），我们不会用你的数据训练AI。' },
+              { q: '支持哪些格式？', a: '目前支持网页URL、PDF文件、纯文本粘贴，视频字幕文本也可以直接粘贴整理。' },
+              { q: '和 Notion 有什么区别？', a: 'Notion 解决「存」，WuFlow 解决「懂」。我们会在你快要遗忘时主动出题考你，而不只是帮你整理笔记。' },
+              { q: '免费版有什么限制？', a: '目前完全免费，Pro功能即将上线，现在注册的用户享有早鸟权益。' },
+              { q: 'AI 回答的来源是哪里？', a: '只基于你自己整理的笔记回答，不会混入外部信息，答案100%来自你的知识库。' },
+              { q: '知乎/需要登录的网站支持吗？', a: '需要登录的网站建议用「文本模式」粘贴内容，复制文章文字直接整理即可。' },
+            ].map(({ q, a }, i) => (
+              <div key={i} style={{ background: '#fafafa', border: '1px solid #ebebeb', borderRadius: 12, padding: 24 }}>
+                <p style={{ fontWeight: 600, color: '#111', margin: '0 0 10px', fontSize: 15 }}>{q}</p>
+                <p style={{ color: '#666', lineHeight: 1.7, margin: 0, fontSize: 14 }}>{a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section style={{ background: '#111', padding: '80px 40px', textAlign: 'center' }}>
         <h2 style={{ fontSize: 36, fontWeight: 700, color: '#fff', margin: '0 0 16px', letterSpacing: '-1px' }}>
