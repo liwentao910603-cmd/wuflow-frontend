@@ -56,6 +56,8 @@ export default function IngestPage() {
   const [tab, setTab] = useState<Tab>("url");
   const [template, setTemplate] = useState<Template>("general");
   const [submitting, setSubmitting] = useState(false);
+  const [submitStep, setSubmitStep] = useState<0|1|2|3>(0);
+  // 0=未开始, 1=正在抓取, 2=提取知识点, 3=生成笔记
   const [formError, setFormError] = useState("");
 
   const [url, setUrl] = useState("");
@@ -185,6 +187,7 @@ export default function IngestPage() {
 
       if (tab === "url") {
         if (!url.trim()) throw new Error("请输入 URL");
+        setSubmitStep(1); // 正在抓取内容
         res = await fetch(`${API}/ingest`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeader },
@@ -192,6 +195,7 @@ export default function IngestPage() {
         });
       } else if (tab === "pdf") {
         if (!pdfFile) throw new Error("请选择 PDF 文件");
+        setSubmitStep(2); // 提取知识点
         const form = new FormData();
         form.append("file", pdfFile);
         if (pdfTitle.trim()) form.append("title", pdfTitle.trim());
@@ -204,6 +208,7 @@ export default function IngestPage() {
       } else {
         if (!textTitle.trim()) throw new Error("请填写标题");
         if (textContent.trim().length < 50) throw new Error("内容至少 50 字");
+        setSubmitStep(2); // 提取知识点
         res = await fetch(`${API}/ingest/text`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeader },
@@ -237,6 +242,8 @@ export default function IngestPage() {
         throw new Error(msg);
       }
 
+      setSubmitStep(3); // 生成笔记
+      await new Promise(r => setTimeout(r, 800)); // 短暂展示第3步
       setToast("✅ 内容已保存，笔记后台生成中...");
       setTimeout(() => setToast(null), 6000);
       await fetchNotes();
@@ -246,6 +253,7 @@ export default function IngestPage() {
       setFormError(e instanceof Error ? e.message : "未知错误，请稍后重试");
     } finally {
       setSubmitting(false);
+      setSubmitStep(0);
     }
   };
 
@@ -450,14 +458,43 @@ export default function IngestPage() {
             >
               {submitting ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" />
                   </svg>
-                  AI正在整理，通常需要15–30秒...
+                  {submitStep === 1 ? '正在抓取内容...' : submitStep === 2 ? '提取知识点中...' : submitStep === 3 ? '生成笔记中...' : '处理中...'}
                 </span>
               ) : "开始整理 →"}
             </button>
+
+            {/* 步骤进度条，仅 submitting 时显示 */}
+            {submitting && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-2">
+                  {(tab === 'url' ? ['抓取内容', '提取知识点', '生成笔记'] : ['提取知识点', '生成笔记']).map((step, i) => {
+                    const stepNum = tab === 'url' ? i + 1 : i + 2;
+                    const isDone = submitStep > stepNum;
+                    const isCurrent = submitStep === stepNum;
+                    return (
+                      <div key={step} className="flex items-center gap-1.5">
+                        <div style={{
+                          width: 18, height: 18, borderRadius: '50%', fontSize: 10, fontWeight: 600,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: isDone ? '#111' : isCurrent ? '#374151' : '#e5e7eb',
+                          color: isDone || isCurrent ? '#fff' : '#9ca3af',
+                          transition: 'all 0.3s'
+                        }}>
+                          {isDone ? '✓' : stepNum}
+                        </div>
+                        <span style={{ fontSize: 11, color: isCurrent ? '#111' : isDone ? '#6b7280' : '#d1d5db', transition: 'color 0.3s' }}>{step}</span>
+                        {i < (tab === 'url' ? 2 : 1) && <div style={{ width: 20, height: 1, background: isDone ? '#111' : '#e5e7eb', margin: '0 4px', transition: 'background 0.3s' }} />}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-400 text-center">通常需要 15–30 秒，请勿关闭页面</p>
+              </div>
+            )}
           </div>
         </div>
 
