@@ -21,11 +21,10 @@ export default function Home() {
       {/* 导航 */}
       <nav style={{ borderBottom: '1px solid #f0f0f0', padding: '0 40px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', zIndex: 100 }}>
         <span style={{ fontSize: 16, fontWeight: 600, color: '#111', letterSpacing: '-0.3px' }}>悟流 WuFlow</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <a href="#features" style={{ fontSize: 14, color: '#555', textDecoration: 'none', padding: '8px 14px' }}>功能</a>
-            <a href="#pricing" style={{ fontSize: 14, color: '#555', textDecoration: 'none', padding: '8px 14px' }}>定价</a>
-            <a href="#faq" style={{ fontSize: 14, color: '#555', textDecoration: 'none', padding: '8px 14px' }}>FAQ</a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginRight: 16 }}>
+            <a href="#features" style={{ fontSize: 14, color: '#888', textDecoration: 'none', padding: '8px 12px' }}>功能</a>
+            <a href="#faq" style={{ fontSize: 14, color: '#888', textDecoration: 'none', padding: '8px 12px' }}>FAQ</a>
           </div>
           {isLoggedIn ? (
             <a href="/dashboard" style={{ background: '#111', color: '#fff', padding: '8px 18px', borderRadius: 8, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>进入我的空间 →</a>
@@ -144,29 +143,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing placeholder */}
-      <div id="pricing" />
-
       {/* FAQ */}
-      <section id="faq" style={{ background: '#fff', padding: '80px 40px' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 32, fontWeight: 700, color: '#111', letterSpacing: '-1px', textAlign: 'center', margin: '0 0 8px' }}>常见问题</h2>
-          <p style={{ color: '#888', textAlign: 'center', fontSize: 15, margin: '0 0 48px' }}>有疑问？这里有答案</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-            {[
-              { q: '我的数据安全吗？', a: '你的笔记仅对你可见，采用行级安全隔离（RLS），我们不会用你的数据训练AI。' },
-              { q: '支持哪些格式？', a: '目前支持网页URL、PDF文件、纯文本粘贴，视频字幕文本也可以直接粘贴整理。' },
-              { q: '和 Notion 有什么区别？', a: 'Notion 解决「存」，WuFlow 解决「懂」。我们会在你快要遗忘时主动出题考你，而不只是帮你整理笔记。' },
-              { q: '免费版有什么限制？', a: '目前完全免费，Pro功能即将上线，现在注册的用户享有早鸟权益。' },
-              { q: 'AI 回答的来源是哪里？', a: '只基于你自己整理的笔记回答，不会混入外部信息，答案100%来自你的知识库。' },
-              { q: '知乎/需要登录的网站支持吗？', a: '需要登录的网站建议用「文本模式」粘贴内容，复制文章文字直接整理即可。' },
-            ].map(({ q, a }, i) => (
-              <div key={i} style={{ background: '#fafafa', border: '1px solid #ebebeb', borderRadius: 12, padding: 24 }}>
-                <p style={{ fontWeight: 600, color: '#111', margin: '0 0 10px', fontSize: 15 }}>{q}</p>
-                <p style={{ color: '#666', lineHeight: 1.7, margin: 0, fontSize: 14 }}>{a}</p>
-              </div>
-            ))}
-          </div>
+      <div style={{ borderTop: '1px solid #f0f0f0' }} />
+      <section id="faq" style={{ maxWidth: 860, margin: '0 auto', padding: '80px 40px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 52 }}>
+          <h2 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-1px', color: '#111', margin: '0 0 12px' }}>常见问题</h2>
+          <p style={{ fontSize: 15, color: '#888', margin: 0 }}>有疑问？这里有答案</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
+          {[
+            { q: '我的数据安全吗？', a: '你的笔记仅对你可见，采用行级安全隔离（RLS），我们不会用你的数据训练 AI。' },
+            { q: '支持哪些格式？', a: '目前支持网页 URL、PDF 文件、纯文本粘贴，视频字幕文本也可以直接粘贴整理。' },
+            { q: '和 Notion 有什么区别？', a: 'Notion 解决「存」，WuFlow 解决「懂」。我们会在你快要遗忘时主动出题考你，不只是帮你整理笔记。' },
+            { q: '免费版有什么限制？', a: '目前完全免费，Pro 功能即将上线，现在注册的用户享有早鸟权益。' },
+            { q: 'AI 回答的来源是哪里？', a: '只基于你自己整理的笔记回答，不会混入外部信息，答案 100% 来自你的知识库。' },
+            { q: '知乎等需要登录的网站支持吗？', a: '需要登录的网站建议用「文本模式」，复制文章内容粘贴进来整理即可。' },
+          ].map((item, i) => (
+            <div key={i} style={{ background: '#fafafa', border: '1px solid #ebebeb', borderRadius: 12, padding: '22px 24px' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#111', marginBottom: 8 }}>{item.q}</div>
+              <div style={{ fontSize: 14, color: '#666', lineHeight: 1.7 }}>{item.a}</div>
+            </div>
+          ))}
         </div>
       </section>
 
