@@ -104,21 +104,22 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
         {!collapsed && <div className="text-xs text-gray-400 px-2 pb-1 pt-0.5 tracking-wide font-medium">学习</div>}
 
         {learnItems.map((item) => (
-          <Link
+          <div
             key={item.label}
-            href={item.href}
             title="即将上线"
-            onClick={(e) => e.preventDefault()}
-            className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 transition-colors whitespace-nowrap opacity-50 cursor-default ${
-              "text-gray-500"
-            } ${collapsed ? "justify-center px-0" : ""}`}
+            className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 whitespace-nowrap cursor-not-allowed select-none ${
+              collapsed ? "justify-center px-0" : ""
+            }`}
+            style={{ color: '#d1d5db' }}
           >
-            <span className="flex-shrink-0">{item.icon}</span>
-            {!collapsed && <span className="flex-1 overflow-hidden text-ellipsis">{item.label}</span>}
-            {!collapsed && item.badge && item.badge > 0 ? (
-              <span className="text-xs bg-red-50 text-red-700 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">{item.badge}</span>
-            ) : null}
-          </Link>
+            <span className="flex-shrink-0" style={{ opacity: 0.5 }}>{item.icon}</span>
+            {!collapsed && (
+              <>
+                <span className="flex-1 overflow-hidden text-ellipsis">{item.label}</span>
+                <span style={{ fontSize: 10, background: '#f3f4f6', color: '#9ca3af', padding: '1px 6px', borderRadius: 99, flexShrink: 0, fontWeight: 500 }}>即将上线</span>
+              </>
+            )}
+          </div>
         ))}
       </nav>
 
