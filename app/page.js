@@ -22,6 +22,11 @@ export default function Home() {
       <nav style={{ borderBottom: '1px solid #f0f0f0', padding: '0 40px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', zIndex: 100 }}>
         <span style={{ fontSize: 16, fontWeight: 600, color: '#111', letterSpacing: '-0.3px' }}>悟流 WuFlow</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <a href="#features" style={{ fontSize: 14, color: '#555', textDecoration: 'none', padding: '8px 14px' }}>功能</a>
+            <a href="#pricing" style={{ fontSize: 14, color: '#555', textDecoration: 'none', padding: '8px 14px' }}>定价</a>
+            <a href="#faq" style={{ fontSize: 14, color: '#555', textDecoration: 'none', padding: '8px 14px' }}>FAQ</a>
+          </div>
           {isLoggedIn ? (
             <a href="/dashboard" style={{ background: '#111', color: '#fff', padding: '8px 18px', borderRadius: 8, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>进入我的空间 →</a>
           ) : (
