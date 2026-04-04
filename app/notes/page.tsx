@@ -211,7 +211,8 @@ export default function NotesPage() {
                     <div style={{ position: 'relative' }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === note.id ? null : note.id); }}
-                        className="text-gray-300 hover:text-gray-500 transition-colors px-1"
+                        className="text-gray-300 hover:text-gray-500 transition-colors"
+                        style={{ fontSize: 12, letterSpacing: '-1px', padding: '2px 4px', lineHeight: 1 }}
                       >
                         ···
                       </button>
