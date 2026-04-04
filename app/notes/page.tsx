@@ -118,8 +118,8 @@ export default function NotesPage() {
         {/* 整合提示 */}
         <div className="mb-8 bg-gray-50 border border-gray-100 rounded-xl px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-gray-700 font-medium mb-0.5">知识库已整合到整理资料页</p>
-            <p className="text-xs text-gray-400">在整理资料页可以边提交新资料、边实时查看已有笔记，体验更流畅。</p>
+            <p className="text-sm text-gray-700 font-medium mb-0.5">想边整理、边查看笔记？</p>
+            <p className="text-xs text-gray-400">整理资料页提供双栏模式，左侧提交新资料，右侧实时显示知识库。</p>
           </div>
           <Link
             href="/ingest"
