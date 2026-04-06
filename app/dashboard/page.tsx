@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [recentNotes, setRecentNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayReviewCount, setTodayReviewCount] = useState(0);
+  const [tomorrowReview, setTomorrowReview] = useState<{count: number, items: {notes: {title: string}}[]}>({ count: 0, items: [] });
 
   const displayName = userEmail.split("@")[0] || "用户";
 
@@ -52,6 +53,13 @@ export default function DashboardPage() {
       });
       const reviewData = await reviewRes.json();
       setTodayReviewCount(reviewData.count || 0);
+    } catch {}
+    try {
+      const tmrRes = await fetch(`${API}/review/tomorrow`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const tmrData = await tmrRes.json();
+      setTomorrowReview(tmrData);
     } catch {}
     setLoading(false);
   };
@@ -86,6 +94,16 @@ export default function DashboardPage() {
             <p style={{ fontSize: 15, color: '#888', margin: 0 }}>
               今天学了什么？知识库里有 {notesTotal} 篇笔记在等你。
             </p>
+            {tomorrowReview.count > 0 && (
+              <p style={{ fontSize: 13, color: '#a78bfa', margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>📅</span>
+                <span>
+                  明天有 {tomorrowReview.count} 篇待复习：
+                  {tomorrowReview.items.slice(0, 2).map(item => item.notes?.title).filter(Boolean).join('、')}
+                  {tomorrowReview.count > 2 ? `...等` : ''}
+                </span>
+              </p>
+            )}
           </div>
 
           {/* 统计卡片 */}
