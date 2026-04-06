@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
+import CheckinModal from "./CheckinModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const supabase = createClient();
@@ -22,11 +23,14 @@ interface Note {
 
 export default function DashboardPage() {
   const [userEmail, setUserEmail] = useState("");
+  const [token, setToken] = useState("");
   const [notesTotal, setNotesTotal] = useState(0);
   const [recentNotes, setRecentNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayReviewCount, setTodayReviewCount] = useState(0);
   const [tomorrowReview, setTomorrowReview] = useState<{count: number, items: {notes: {title: string}}[]}>({ count: 0, items: [] });
+  const [studyStats, setStudyStats] = useState({ week_hours: 0, streak_days: 0, logged_today: false });
+  const [showCheckin, setShowCheckin] = useState(false);
 
   const displayName = userEmail.split("@")[0] || "用户";
 
@@ -34,6 +38,7 @@ export default function DashboardPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
       setUserEmail(session.user.email ?? "");
+      setToken(session.access_token);
       fetchData(session.access_token);
     });
   }, []);
@@ -60,6 +65,13 @@ export default function DashboardPage() {
       });
       const tmrData = await tmrRes.json();
       setTomorrowReview(tmrData);
+    } catch {}
+    try {
+      const statsRes = await fetch(`${API}/study/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const statsData = await statsRes.json();
+      setStudyStats(statsData);
     } catch {}
     setLoading(false);
   };
@@ -104,6 +116,17 @@ export default function DashboardPage() {
                 </span>
               </p>
             )}
+            <button
+              onClick={() => setShowCheckin(true)}
+              style={{
+                marginTop: 16, background: studyStats.logged_today ? '#f0fdf4' : '#111',
+                color: studyStats.logged_today ? '#16a34a' : '#fff',
+                border: studyStats.logged_today ? '1px solid #bbf7d0' : 'none',
+                borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer'
+              }}
+            >
+              {studyStats.logged_today ? '✓ 今日已打卡' : '📝 30秒打卡'}
+            </button>
           </div>
 
           {/* 统计卡片 */}
@@ -111,8 +134,8 @@ export default function DashboardPage() {
             {[
               { label: '知识库笔记', value: notesTotal, unit: '篇', hint: '累计整理', emptyHint: '整理第一篇笔记开始记录 →' },
               { label: '今日待复习', value: todayReviewCount, unit: '篇', hint: '基于遗忘曲线', red: true, emptyHint: '加入复习计划后显示' },
-              { label: '连续学习', value: 0, unit: '天', hint: '保持节奏', emptyHint: '每天整理一篇来打卡' },
-              { label: '本周时长', value: 0, unit: '小时', hint: '专注学习', emptyHint: '开始第一次学习' },
+              { label: '连续学习', value: studyStats.streak_days, unit: '天', hint: '保持节奏', emptyHint: '每天整理一篇来打卡' },
+              { label: '本周时长', value: studyStats.week_hours, unit: '小时', hint: '专注学习', emptyHint: '开始第一次学习' },
             ].map((s, i) => (
               <div key={i} style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ fontSize: 12, color: '#999', marginBottom: 10, fontWeight: 500 }}>{s.label}</div>
@@ -190,6 +213,13 @@ export default function DashboardPage() {
 
         </div>
       </main>
+    {showCheckin && (
+        <CheckinModal
+          token={token}
+          onClose={() => setShowCheckin(false)}
+          onSuccess={() => { setShowCheckin(false); fetchData(token); }}
+        />
+      )}
     </div>
   );
 }
