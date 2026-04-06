@@ -17,6 +17,7 @@ interface Note {
   source_type: string;
   tokens_used: number;
   created_at: string;
+  status?: string;
 }
 
 type Filter = "all" | "url" | "pdf" | "text";
@@ -90,6 +91,10 @@ export default function NotesPage() {
       setNotes(data.notes || []);
       setTotal(data.total || 0);
       setTotalPages(data.total_pages || 1);
+      const hasProcessing = (data.notes || []).some((n: Note) => n.status === 'processing');
+      if (hasProcessing) {
+        setTimeout(() => fetchNotes(), 3000);
+      }
     } catch {
       setNotes([]);
     } finally {
@@ -266,7 +271,14 @@ export default function NotesPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-sm font-medium text-gray-900 leading-snug">{note.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-gray-900 leading-snug">{note.title}</h3>
+                      {note.status === 'processing' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-500 font-medium animate-pulse">
+                          整理中...
+                        </span>
+                      )}
+                    </div>
                     {expanded !== note.id && (
                       <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
                         {note.summary}

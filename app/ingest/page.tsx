@@ -28,6 +28,7 @@ interface Note {
   source_url: string;
   source_type: string;
   created_at: string;
+  status?: string;
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -118,6 +119,10 @@ export default function IngestPage() {
       const data = await res.json();
       setNotes(data.notes || []);
       setNotesTotal(data.total || 0);
+      const hasProcessing = (data.notes || []).some((n: Note) => n.status === 'processing');
+      if (hasProcessing) {
+        setTimeout(() => fetchNotesRef.current(), 3000);
+      }
     } catch {
       setNotes([]);
     } finally {
@@ -617,7 +622,14 @@ export default function IngestPage() {
                         <SourceBadge type={note.source_type} />
                         <span className="text-xs text-gray-300">{formatDate(note.created_at)}</span>
                       </div>
-                      <p className="text-sm font-medium text-gray-900 leading-snug">{note.title}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900 leading-snug">{note.title}</p>
+                        {note.status === 'processing' && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-500 font-medium animate-pulse">
+                            整理中...
+                          </span>
+                        )}
+                      </div>
                       {expanded !== note.id && (
                         <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{note.summary}</p>
                       )}
