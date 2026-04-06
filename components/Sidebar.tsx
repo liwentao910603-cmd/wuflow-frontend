@@ -51,7 +51,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
     { href: "/review", label: "复习提醒", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     )},
-    { href: "#", label: "学习统计", disabled: true, icon: (
+    { href: "/study-stats", label: "学习统计", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     )},
   ];
