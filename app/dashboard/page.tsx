@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [notesTotal, setNotesTotal] = useState(0);
   const [recentNotes, setRecentNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [todayReviewCount, setTodayReviewCount] = useState(0);
 
   const displayName = userEmail.split("@")[0] || "用户";
 
@@ -44,6 +45,13 @@ export default function DashboardPage() {
       const data = await res.json();
       setNotesTotal(data.total || 0);
       setRecentNotes(data.notes?.slice(0, 3) || []);
+    } catch {}
+    try {
+      const reviewRes = await fetch(`${API}/review/today`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const reviewData = await reviewRes.json();
+      setTodayReviewCount(reviewData.count || 0);
     } catch {}
     setLoading(false);
   };
@@ -84,7 +92,7 @@ export default function DashboardPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 40 }}>
             {[
               { label: '知识库笔记', value: notesTotal, unit: '篇', hint: '累计整理', emptyHint: '整理第一篇笔记开始记录 →' },
-              { label: '今日待复习', value: 0, unit: '篇', hint: '基于遗忘曲线', red: true, emptyHint: '复习功能即将上线' },
+              { label: '今日待复习', value: todayReviewCount, unit: '篇', hint: '基于遗忘曲线', red: true, emptyHint: '加入复习计划后显示' },
               { label: '连续学习', value: 0, unit: '天', hint: '保持节奏', emptyHint: '每天整理一篇来打卡' },
               { label: '本周时长', value: 0, unit: '小时', hint: '专注学习', emptyHint: '开始第一次学习' },
             ].map((s, i) => (
