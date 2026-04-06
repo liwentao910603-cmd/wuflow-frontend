@@ -301,6 +301,7 @@ export default function IngestPage() {
       setToast("✅ 内容已保存，笔记后台生成中...");
       setTimeout(() => setToast(null), 6000);
       await fetchNotes();
+      setTimeout(() => fetchNotesRef.current(), 4000);
       const noteId = (data.note as { id?: string } | null)?.id;
       if (noteId) setExpanded(noteId);
     } catch (e: unknown) {
