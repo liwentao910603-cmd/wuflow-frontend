@@ -54,6 +54,10 @@ export default function NotesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
+  // 复习状态：noteId -> true(已加入) | false(未加入) | 'loading'
+  const [reviewStatus, setReviewStatus] = useState<Record<string, boolean | "loading">>({});
+  const [reviewLoading, setReviewLoading] = useState<string | null>(null);
+
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
@@ -94,6 +98,62 @@ export default function NotesPage() {
   }, [page, filter]);
 
   useEffect(() => { fetchNotes(); }, [fetchNotes]);
+
+  // 展开笔记时拉取复习状态
+  const fetchReviewStatus = useCallback(async (noteId: string) => {
+    if (reviewStatus[noteId] !== undefined) return;
+    setReviewStatus(prev => ({ ...prev, [noteId]: "loading" }));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${API}/review/status/${noteId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      setReviewStatus(prev => ({ ...prev, [noteId]: data.in_review ?? false }));
+    } catch {
+      setReviewStatus(prev => ({ ...prev, [noteId]: false }));
+    }
+  }, [reviewStatus]);
+
+  const handleExpand = (noteId: string) => {
+    const next = expanded === noteId ? null : noteId;
+    setExpanded(next);
+    if (next) fetchReviewStatus(noteId);
+  };
+
+  // 加入/取消复习
+  const toggleReview = async (noteId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setReviewLoading(noteId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const inReview = reviewStatus[noteId] === true;
+
+      if (inReview) {
+        await fetch(`${API}/review/remove/${noteId}`, {
+          method: "DELETE",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        setReviewStatus(prev => ({ ...prev, [noteId]: false }));
+      } else {
+        await fetch(`${API}/review/add`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ note_id: noteId }),
+        });
+        setReviewStatus(prev => ({ ...prev, [noteId]: true }));
+      }
+    } catch {
+      // 失败静默处理
+    } finally {
+      setReviewLoading(null);
+    }
+  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -193,12 +253,18 @@ export default function NotesPage() {
               >
                 <div
                   className="px-5 py-4 cursor-pointer flex items-start justify-between gap-4"
-                  onClick={() => setExpanded(expanded === note.id ? null : note.id)}
+                  onClick={() => handleExpand(note.id)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
                       <SourceBadge type={note.source_type} />
                       <span className="text-xs text-gray-300">{formatDate(note.created_at)}</span>
+                      {/* 已加入复习的 badge */}
+                      {reviewStatus[note.id] === true && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-400 font-medium">
+                          📚 复习中
+                        </span>
+                      )}
                     </div>
                     <h3 className="text-sm font-medium text-gray-900 leading-snug">{note.title}</h3>
                     {expanded !== note.id && (
@@ -281,13 +347,30 @@ export default function NotesPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-50">
                       <div className="flex flex-wrap gap-1.5">
                         {note.tags?.map((tag, i) => (
                           <span key={i} className="text-xs text-gray-300">#{tag}</span>
                         ))}
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        {/* 加入复习按钮 */}
+                        <button
+                          onClick={(e) => toggleReview(note.id, e)}
+                          disabled={reviewLoading === note.id || reviewStatus[note.id] === "loading"}
+                          className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                            reviewStatus[note.id] === true
+                              ? "border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-red-50 hover:border-red-200 hover:text-red-400"
+                              : "border-gray-200 text-gray-400 hover:border-indigo-200 hover:text-indigo-500 hover:bg-indigo-50"
+                          } disabled:opacity-50`}
+                        >
+                          {reviewLoading === note.id || reviewStatus[note.id] === "loading"
+                            ? "..."
+                            : reviewStatus[note.id] === true
+                            ? "✓ 复习中（点击取消）"
+                            : "📚 加入复习"}
+                        </button>
+
                         {note.source_url &&
                           !note.source_url.startsWith("pdf://") &&
                           !note.source_url.startsWith("text://") && (
