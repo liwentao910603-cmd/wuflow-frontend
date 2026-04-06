@@ -47,7 +47,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
     )},
   ];
 
-  const learnItems = [
+  const learnItems: { href: string; label: string; disabled?: boolean; icon: JSX.Element }[] = [
     { href: "/review", label: "复习提醒", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     )},
