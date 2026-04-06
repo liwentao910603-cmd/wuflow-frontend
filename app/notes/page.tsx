@@ -395,9 +395,12 @@ export default function NotesPage() {
                             : "📚 加入复习"}
                         </button>
 
-                        {note.source_url &&
-                          !note.source_url.startsWith("pdf://") &&
-                          !note.source_url.startsWith("text://") && (
+                        {note.source_url && !note.source_url.startsWith("text://") && (
+                          note.source_url.startsWith("pdf://") ? (
+                            <span className="text-xs text-gray-400">
+                              📄 {note.source_url.replace("pdf://", "")}
+                            </span>
+                          ) : (
                             <a
                               href={note.source_url}
                               target="_blank"
@@ -406,7 +409,8 @@ export default function NotesPage() {
                             >
                               查看原文 →
                             </a>
-                          )}
+                          )
+                        )}
                         <Link href="/qa" className="text-xs text-gray-500 hover:text-gray-900 transition-colors">
                           💬 去问答
                         </Link>

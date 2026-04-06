@@ -563,31 +563,9 @@ export default function IngestPage() {
 
             {/* 步骤进度条，仅 submitting 时显示 */}
             {submitting && (
-              <div className="mt-3">
-                <div className="flex items-center justify-between mb-2">
-                  {(tab === 'url' ? ['抓取内容', '提取知识点', '生成笔记'] : ['提取知识点', '生成笔记']).map((step, i) => {
-                    const stepNum = tab === 'url' ? i + 1 : i + 2;
-                    const isDone = submitStep > stepNum;
-                    const isCurrent = submitStep === stepNum;
-                    return (
-                      <div key={step} className="flex items-center gap-1.5">
-                        <div style={{
-                          width: 18, height: 18, borderRadius: '50%', fontSize: 10, fontWeight: 600,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          background: isDone ? '#111' : isCurrent ? '#374151' : '#e5e7eb',
-                          color: isDone || isCurrent ? '#fff' : '#9ca3af',
-                          transition: 'all 0.3s'
-                        }}>
-                          {isDone ? '✓' : stepNum}
-                        </div>
-                        <span style={{ fontSize: 11, color: isCurrent ? '#111' : isDone ? '#6b7280' : '#d1d5db', transition: 'color 0.3s' }}>{step}</span>
-                        {i < (tab === 'url' ? 2 : 1) && <div style={{ width: 20, height: 1, background: isDone ? '#111' : '#e5e7eb', margin: '0 4px', transition: 'background 0.3s' }} />}
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-gray-400 text-center">通常需要 15–30 秒，请勿关闭页面</p>
-              </div>
+              <p className="mt-3 text-xs text-gray-400 text-center">
+                正在整理，稍后会在右侧知识库自动显示结果...
+              </p>
             )}
           </div>
         </div>
@@ -767,9 +745,12 @@ export default function IngestPage() {
                           ))}
                         </div>
                         <div className="flex items-center gap-3">
-                          {note.source_url &&
-                            !note.source_url.startsWith("pdf://") &&
-                            !note.source_url.startsWith("text://") && (
+                          {note.source_url && !note.source_url.startsWith("text://") && (
+                            note.source_url.startsWith("pdf://") ? (
+                              <span className="text-xs text-gray-400">
+                                📄 {note.source_url.replace("pdf://", "")}
+                              </span>
+                            ) : (
                               <a
                                 href={note.source_url}
                                 target="_blank"
@@ -778,7 +759,8 @@ export default function IngestPage() {
                               >
                                 查看原文 →
                               </a>
-                            )}
+                            )
+                          )}
                           <button
                             onClick={(e) => toggleReview(note.id, e)}
                             disabled={reviewLoading === note.id || reviewStatus[note.id] === "loading"}
