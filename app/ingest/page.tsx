@@ -118,6 +118,8 @@ export default function IngestPage() {
           setNotes(prev => prev.map(n =>
             n.id === noteId ? { ...n, ...data.note } : n
           ));
+          setToast("✅ 笔记已生成，知识库已更新");
+          setTimeout(() => setToast(null), 6000);
         }
       } catch {}
     }, 3000);
@@ -165,11 +167,8 @@ export default function IngestPage() {
         event: "INSERT",
         schema: "public",
         table: "notes"
-      }, (payload) => {
-        console.log("Realtime INSERT received:", payload);
-        setTimeout(() => fetchNotesRef.current(), 500);
-        setToast("✅ 新笔记已生成，知识库已更新");
-        setTimeout(() => setToast(null), 6000);
+      }, () => {
+        // 由前端直接插入 + pollNoteStatus 处理，不触发整体刷新
       })
       .subscribe((status) => {
         console.log("[Realtime] status:", status);
@@ -322,11 +321,27 @@ export default function IngestPage() {
 
       setSubmitStep(3); // 生成笔记
       await new Promise(r => setTimeout(r, 800)); // 短暂展示第3步
-      setToast("✅ 内容已保存，笔记后台生成中...");
-      setTimeout(() => setToast(null), 6000);
-      await fetchNotes();
-      const noteId = (data.note as { id?: string } | null)?.id;
-      if (noteId) setExpanded(noteId);
+
+      const result = data as Record<string, unknown>;
+      const noteId = result.note_id as string | undefined;
+      const tempNote: Note = {
+        id: noteId || crypto.randomUUID(),
+        title: result.title as string || "整理中...",
+        summary: result.summary as string || "",
+        concepts: [],
+        key_points: [],
+        action_items: [],
+        tags: [],
+        source_url: (result.url || result.source_url || "") as string,
+        source_type: result.source_type as string || tab,
+        created_at: result.created_at as string || new Date().toISOString(),
+        status: "processing",
+      };
+      setNotes(prev => [tempNote, ...prev]);
+      if (noteId) {
+        setExpanded(noteId);
+        pollNoteStatus(noteId);
+      }
     } catch (e: unknown) {
       setFormError(e instanceof Error ? e.message : "未知错误，请稍后重试");
     } finally {
