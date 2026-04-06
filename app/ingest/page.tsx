@@ -29,6 +29,7 @@ interface Note {
   source_type: string;
   created_at: string;
   status?: string;
+  concepts_detail?: { term: string; definition: string }[];
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -711,14 +712,25 @@ export default function IngestPage() {
                         <p className="text-sm text-gray-600 leading-relaxed">{note.summary}</p>
                       </div>
 
-                      {note.concepts?.length > 0 && (
+                      {(note.concepts_detail?.length > 0 || note.concepts?.length > 0) && (
                         <div>
                           <p className="text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">💡 核心概念</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {note.concepts.map((c, i) => (
-                              <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{c}</span>
-                            ))}
-                          </div>
+                          {note.concepts_detail?.length > 0 ? (
+                            <div className="flex flex-col gap-2">
+                              {note.concepts_detail.map((c, i) => (
+                                <div key={i} className="flex gap-2 items-start">
+                                  <span className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-medium shrink-0">{c.term}</span>
+                                  <span className="text-xs text-gray-500 leading-relaxed pt-0.5">{c.definition}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {note.concepts.map((c, i) => (
+                                <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{c}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
 
