@@ -84,6 +84,10 @@ export default function IngestPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
+  // 复习状态：noteId -> true(已加入) | false(未加入) | 'loading'
+  const [reviewStatus, setReviewStatus] = useState<Record<string, boolean | "loading">>({});
+  const [reviewLoading, setReviewLoading] = useState<string | null>(null);
+
   // ── Init ─────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -143,6 +147,50 @@ export default function IngestPage() {
       });
     return () => { supabase.removeChannel(channel); };
   }, []); // 注意：依赖数组改为空数组，fetchNotes 通过闭包调用
+
+  // ── Review queue ──────────────────────────────────────
+  const fetchReviewStatus = async (noteId: string) => {
+    if (reviewStatus[noteId] !== undefined) return;
+    setReviewStatus(prev => ({ ...prev, [noteId]: "loading" }));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${API}/review/status/${noteId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      setReviewStatus(prev => ({ ...prev, [noteId]: data.in_review ?? false }));
+    } catch {
+      setReviewStatus(prev => ({ ...prev, [noteId]: false }));
+    }
+  };
+
+  const toggleReview = async (noteId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setReviewLoading(noteId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const inReview = reviewStatus[noteId] === true;
+      if (inReview) {
+        await fetch(`${API}/review/remove/${noteId}`, {
+          method: "DELETE",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        setReviewStatus(prev => ({ ...prev, [noteId]: false }));
+      } else {
+        await fetch(`${API}/review/add`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ note_id: noteId }),
+        });
+        setReviewStatus(prev => ({ ...prev, [noteId]: true }));
+      }
+    } catch {
+    } finally {
+      setReviewLoading(null);
+    }
+  };
 
   // ── Delete note ───────────────────────────────────────
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -558,7 +606,11 @@ export default function IngestPage() {
                   {/* 卡片头部 */}
                   <div
                     className="px-4 py-3.5 cursor-pointer flex items-start justify-between gap-3"
-                    onClick={() => setExpanded(expanded === note.id ? null : note.id)}
+                    onClick={() => {
+                      const next = expanded === note.id ? null : note.id;
+                      setExpanded(next);
+                      if (next) fetchReviewStatus(note.id);
+                    }}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -664,6 +716,21 @@ export default function IngestPage() {
                                 查看原文 →
                               </a>
                             )}
+                          <button
+                            onClick={(e) => toggleReview(note.id, e)}
+                            disabled={reviewLoading === note.id || reviewStatus[note.id] === "loading"}
+                            className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
+                              reviewStatus[note.id] === true
+                                ? "border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-red-50 hover:border-red-200 hover:text-red-400"
+                                : "border-gray-200 text-gray-400 hover:border-indigo-200 hover:text-indigo-500 hover:bg-indigo-50"
+                            } disabled:opacity-50`}
+                          >
+                            {reviewLoading === note.id || reviewStatus[note.id] === "loading"
+                              ? "..."
+                              : reviewStatus[note.id] === true
+                              ? "✓ 复习中"
+                              : "📚 复习"}
+                          </button>
                           <Link href="/qa" className="text-xs text-gray-500 hover:text-gray-900 transition-colors">
                             💬 问答
                           </Link>
