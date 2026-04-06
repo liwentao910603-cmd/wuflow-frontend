@@ -103,6 +103,27 @@ export default function IngestPage() {
 
   // ── Fetch notes ───────────────────────────────────────
   const fetchNotesRef = useRef<() => void>(() => {});
+
+  const pollNoteStatus = async (noteId: string) => {
+    const timer = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const res = await fetch(`${API}/notes/${noteId}/status`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await res.json();
+        if (data.status === 'done') {
+          clearInterval(timer);
+          setNotes(prev => prev.map(n =>
+            n.id === noteId ? { ...n, ...data.note } : n
+          ));
+        }
+      } catch {}
+    }, 3000);
+    setTimeout(() => clearInterval(timer), 60000);
+  };
+
   const fetchNotes = useCallback(async () => {
     setNotesLoading(true);
     try {
@@ -117,11 +138,14 @@ export default function IngestPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
-      setNotes(data.notes || []);
+      const allNotes = data.notes || [];
+      setNotes(allNotes);
       setNotesTotal(data.total || 0);
-      const hasProcessing = (data.notes || []).some((n: Note) => n.status === 'processing');
-      if (hasProcessing) {
-        setTimeout(() => fetchNotesRef.current(), 3000);
+      const processingNotes = allNotes.filter((n: Note) => n.status === 'processing');
+      if (processingNotes.length > 0) {
+        processingNotes.forEach((note: Note) => {
+          pollNoteStatus(note.id);
+        });
       }
     } catch {
       setNotes([]);
