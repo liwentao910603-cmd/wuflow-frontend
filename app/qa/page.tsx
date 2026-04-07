@@ -6,30 +6,70 @@ import Sidebar from "@/components/Sidebar";
 
 // 轻量 Markdown → HTML 转换（无需引入外部库）
 function renderMarkdown(text: string): string {
+  const lines = text.split("\n");
+  const result: string[] = [];
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // 标题 ### ## #
+    const h3 = line.match(/^###\s+(.+)/);
+    const h2 = line.match(/^##\s+(.+)/);
+    const h1 = line.match(/^#\s+(.+)/);
+    if (h3) {
+      if (inList) { result.push("</ul>"); inList = false; }
+      result.push(`<p style="font-weight:700;font-size:14px;margin:12px 0 4px 0">${inline(h3[1])}</p>`);
+      continue;
+    }
+    if (h2) {
+      if (inList) { result.push("</ul>"); inList = false; }
+      result.push(`<p style="font-weight:700;font-size:15px;margin:14px 0 4px 0">${inline(h2[1])}</p>`);
+      continue;
+    }
+    if (h1) {
+      if (inList) { result.push("</ul>"); inList = false; }
+      result.push(`<p style="font-weight:700;font-size:16px;margin:14px 0 4px 0">${inline(h1[1])}</p>`);
+      continue;
+    }
+
+    // 无序列表 * 或 -
+    const li = line.match(/^[\*\-]\s+(.+)/);
+    if (li) {
+      if (!inList) { result.push('<ul style="margin:4px 0;padding-left:20px;list-style:disc">'); inList = true; }
+      result.push(`<li style="margin:2px 0;line-height:1.75">${inline(li[1])}</li>`);
+      continue;
+    }
+
+    // 数字列表
+    const oli = line.match(/^\d+\.\s+(.+)/);
+    if (oli) {
+      if (!inList) { result.push('<ul style="margin:4px 0;padding-left:20px;list-style:decimal">'); inList = true; }
+      result.push(`<li style="margin:2px 0;line-height:1.75">${inline(oli[1])}</li>`);
+      continue;
+    }
+
+    // 空行：关闭列表，不产生额外段落间距
+    if (line.trim() === "") {
+      if (inList) { result.push("</ul>"); inList = false; }
+      else { result.push('<div style="height:6px"></div>'); }
+      continue;
+    }
+
+    // 普通行
+    if (inList) { result.push("</ul>"); inList = false; }
+    result.push(`<p style="margin:0 0 6px 0;line-height:1.85">${inline(line)}</p>`);
+  }
+
+  if (inList) result.push("</ul>");
+  return result.join("");
+}
+
+// 处理行内格式：**粗体** *斜体*
+function inline(text: string): string {
   return text
-    // 先处理来源标注 **来源**：... → 单独一行的粗体
-    // 粗体 **text**
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    // 斜体 *text*（确保不是列表符号，即前面不是行首空格+*）
-    .replace(/(?<![*\n])\*(?!\s)(.+?)(?<!\s)\*(?!\*)/g, "<em>$1</em>")
-    // 无序列表行：`* ` 或 `- ` 开头
-    .replace(/^[\*\-]\s+(.+)$/gm, "<li>$1</li>")
-    // 连续 li 包裹成 ul
-    .replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
-    // 数字列表 `1. `
-    .replace(/^\d+\.\s+(.+)$/gm, "<li>$1</li>")
-    // 段落：空行分隔
-    .replace(/\n{2,}/g, "</p><p>")
-    // 单个换行
-    .replace(/\n/g, "<br/>")
-    // 首尾包裹 p
-    .replace(/^/, "<p>")
-    .replace(/$/, "</p>")
-    // 清理 ul 内多余的 p 标签
-    .replace(/<p>(<ul>)/g, "$1")
-    .replace(/(<\/ul>)<\/p>/g, "$1")
-    .replace(/<p><\/p>/g, "")
-    .replace(/<p><br\/>/g, "<p>");
+    .replace(/(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)/g, "<em>$1</em>");
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:9000/api/v1";
@@ -199,7 +239,7 @@ export default function QAPage() {
   return (
     <div style={{ ...s.page, flexDirection: "row" }}>
       <Sidebar userEmail={userEmail ?? ""} />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", height: "100%" }}>
       <style>{`
         @keyframes wf-spin{to{transform:rotate(360deg)}}
         @keyframes wf-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -208,13 +248,9 @@ export default function QAPage() {
         .suggest-btn:hover{background:#F0F0EC!important}
         .clear-btn:hover{background:#f5f5f2!important}
         /* Markdown 渲染样式 */
-        .wf-md p{margin:0 0 8px 0;line-height:1.85}
-        .wf-md p:last-child{margin-bottom:0}
-        .wf-md strong{font-weight:600;color:inherit}
+        .wf-md{font-size:14px;line-height:1.85;color:inherit}
+        .wf-md strong{font-weight:600}
         .wf-md em{font-style:italic}
-        .wf-md ul{margin:6px 0 8px 0;padding-left:18px;list-style:disc}
-        .wf-md li{margin-bottom:4px;line-height:1.75}
-        .wf-md br{display:block;content:"";margin-top:2px}
       `}</style>
 
       {/* Messages */}
@@ -337,8 +373,8 @@ export default function QAPage() {
 
 const BL = "#111";
 const s: Record<string, React.CSSProperties> = {
-  page:        { minHeight: "100vh", background: "#ffffff", fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif", color: "rgba(0,0,0,0.87)", display: "flex", flexDirection: "column" },
-  main:        { flex: 1, overflow: "auto" },
+  page:        { height: "100vh", overflow: "hidden", background: "#ffffff", fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif", color: "rgba(0,0,0,0.87)", display: "flex", flexDirection: "column" },
+  main:        { flex: 1, overflowY: "auto", minHeight: 0 },
   feed:        { maxWidth: 760, margin: "0 auto", padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: 16 },
   empty:       { textAlign: "center", padding: "48px 0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 },
   emptyIcon:   { width: 56, height: 56, borderRadius: "50%", background: "#f7f6f3", display: "flex", alignItems: "center", justifyContent: "center" },
