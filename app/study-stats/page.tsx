@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getCache, setCache } from "@/lib/cache";
 import Sidebar from "@/components/Sidebar";
@@ -127,15 +127,7 @@ export default function StudyStatsPage() {
   const [totalDays, setTotalDays] = useState(0);
   const [totalMinutes, setTotalMinutes] = useState(0);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { window.location.href = "/login"; return; }
-      setUserEmail(session.user.email ?? "");
-      fetchAll(session.access_token);
-    });
-  }, []);
-
-  const fetchAll = async (token: string) => {
+  const fetchAll = useCallback(async (token: string) => {
     const h = { Authorization: `Bearer ${token}` };
     try {
       const cachedHeatmap = getCache('stats:heatmap') as Record<string, number> | null;
@@ -176,7 +168,15 @@ export default function StudyStatsPage() {
       setLoadError(true);
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { window.location.href = "/login"; return; }
+      setUserEmail(session.user.email ?? "");
+      fetchAll(session.access_token);
+    });
+  }, [fetchAll]);
 
   const statCards = [
     { label: "连续打卡", value: stats.streak_days, unit: "天", icon: "🔥" },

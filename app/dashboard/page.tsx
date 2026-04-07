@@ -35,16 +35,7 @@ export default function DashboardPage() {
 
   const displayName = userEmail.split("@")[0] || "用户";
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { window.location.href = "/login"; return; }
-      setUserEmail(session.user.email ?? "");
-      setToken(session.access_token);
-      fetchData(session.access_token);
-    });
-  }, []);
-
-  const fetchData = async (token: string) => {
+  const fetchData = useCallback(async (token: string) => {
     try {
       const res = await fetch(`${API}/notes?page=1&page_size=3`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -93,7 +84,16 @@ export default function DashboardPage() {
       }
     } catch {}
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { window.location.href = "/login"; return; }
+      setUserEmail(session.user.email ?? "");
+      setToken(session.access_token);
+      fetchData(session.access_token);
+    });
+  }, [fetchData]);
 
   const tagColor: Record<string, string> = {
     url: "bg-blue-50 text-blue-600",

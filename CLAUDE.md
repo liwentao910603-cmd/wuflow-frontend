@@ -106,3 +106,8 @@ NEXT_PUBLIC_API_URL=http://localhost:9000   # dev
 3. 错误状态要有用户友好的提示（中文）
 4. 不引入新的 UI 组件库（保持轻量）
 5. 改动后在 localhost:3000 验证再提交
+
+## 安全规范
+- 用户输入必须做基础 sanitize，不直接渲染到 DOM
+- API 调用统一走 /api/* 代理，不在前端暴露 key
+- 敏感操作（删除、修改）必须有二次确认

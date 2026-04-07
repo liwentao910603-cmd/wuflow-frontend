@@ -109,9 +109,10 @@ export default function IngestPage() {
 
   // 组件卸载时清理所有轮询
   useEffect(() => {
+    const pollers = pollersRef.current;
     return () => {
-      pollersRef.current.forEach(timer => clearInterval(timer));
-      pollersRef.current.clear();
+      pollers.forEach(timer => clearInterval(timer));
+      pollers.clear();
     };
   }, []);
 

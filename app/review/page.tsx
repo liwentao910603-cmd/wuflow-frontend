@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getCache, setCache, invalidateCache, invalidatePrefix } from "@/lib/cache";
 import Sidebar from "@/components/Sidebar";
@@ -60,16 +60,7 @@ export default function ReviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [nextBusy, setNextBusy] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { window.location.href = "/login"; return; }
-      setUserEmail(session.user.email ?? "");
-      setToken(session.access_token);
-      fetchToday(session.access_token);
-    });
-  }, []);
-
-  const fetchToday = async (t: string) => {
+  const fetchToday = useCallback(async (t: string) => {
     setListLoading(true);
     setError(null);
     try {
@@ -88,7 +79,16 @@ export default function ReviewPage() {
       setError("网络错误，请刷新重试");
     }
     setListLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { window.location.href = "/login"; return; }
+      setUserEmail(session.user.email ?? "");
+      setToken(session.access_token);
+      fetchToday(session.access_token);
+    });
+  }, [fetchToday]);
 
   const startReview = async (item: ReviewItem, index: number) => {
     setCurrentIndex(index);
