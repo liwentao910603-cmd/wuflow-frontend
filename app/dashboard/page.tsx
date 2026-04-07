@@ -95,15 +95,15 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}>
       <Sidebar userEmail={userEmail} />
-      <main className="flex-1 overflow-y-auto" style={{ background: '#f9f9f8' }}>
+      <main className="flex-1 overflow-y-auto" style={{ background: '#f7f6f3' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 48px 48px' }}>
 
           {/* 问候 */}
           <div style={{ marginBottom: 40 }}>
-            <h1 style={{ fontSize: 30, fontWeight: 600, color: '#111', letterSpacing: '-0.5px', margin: '0 0 6px' }}>
+            <h1 style={{ fontSize: 30, fontWeight: 600, color: 'rgba(0,0,0,0.87)', letterSpacing: '-0.5px', margin: '0 0 6px' }}>
               {getGreeting()}，{displayName.length > 8 ? '同学' : displayName} 👋
             </h1>
-            <p style={{ fontSize: 15, color: '#888', margin: 0 }}>
+            <p style={{ fontSize: 15, color: '#6b6b6b', margin: 0 }}>
               今天学了什么？知识库里有 {notesTotal} 篇笔记在等你。
             </p>
             {tomorrowReview.count > 0 && (
@@ -122,7 +122,7 @@ export default function DashboardPage() {
                 marginTop: 16, background: studyStats.logged_today ? '#f0fdf4' : '#111',
                 color: studyStats.logged_today ? '#16a34a' : '#fff',
                 border: studyStats.logged_today ? '1px solid #bbf7d0' : 'none',
-                borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer'
+                borderRadius: 6, padding: '9px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer'
               }}
             >
               {studyStats.logged_today ? '✓ 今日已打卡' : '📝 30秒打卡'}
@@ -137,15 +137,15 @@ export default function DashboardPage() {
               { label: '连续学习', value: studyStats.streak_days, unit: '天', hint: '保持节奏', emptyHint: '每天整理一篇来打卡' },
               { label: '本周时长', value: studyStats.week_hours, unit: '小时', hint: '专注学习', emptyHint: '开始第一次学习' },
             ].map((s, i) => (
-              <div key={i} style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '20px 22px' }}>
-                <div style={{ fontSize: 12, color: '#999', marginBottom: 10, fontWeight: 500 }}>{s.label}</div>
+              <div key={i} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 10, fontWeight: 500 }}>{s.label}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-                  <span style={{ fontSize: 32, fontWeight: 600, color: s.value === 0 ? '#ddd' : (s.red ? '#e53e3e' : '#111'), letterSpacing: '-1px' }}>{s.value}</span>
-                  <span style={{ fontSize: 13, color: '#bbb' }}>{s.unit}</span>
+                  <span style={{ fontSize: 32, fontWeight: 600, color: s.value === 0 ? '#a0a0a0' : (s.red ? '#e53e3e' : 'rgba(0,0,0,0.87)'), letterSpacing: '-1px' }}>{s.value}</span>
+                  <span style={{ fontSize: 13, color: '#a0a0a0' }}>{s.unit}</span>
                 </div>
                 {s.value === 0
-                  ? <div style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{s.emptyHint}</div>
-                  : <div style={{ fontSize: 12, color: '#bbb' }}>{s.hint}</div>
+                  ? <div style={{ fontSize: 12, color: '#a0a0a0', marginTop: 2 }}>{s.emptyHint}</div>
+                  : <div style={{ fontSize: 12, color: '#a0a0a0' }}>{s.hint}</div>
                 }
               </div>
             ))}
@@ -153,7 +153,7 @@ export default function DashboardPage() {
 
           {/* 快捷入口 */}
           <div style={{ marginBottom: 40 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#999', letterSpacing: '0.5px', marginBottom: 14, textTransform: 'uppercase' }}>快捷入口</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b6b', letterSpacing: '0.5px', marginBottom: 14, textTransform: 'uppercase' }}>快捷入口</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
               {[
                 { href: '/ingest', icon: '📥', title: '整理新资料', desc: '粘贴 URL、上传 PDF 或文本', color: '#f0f4ff' },
@@ -161,13 +161,13 @@ export default function DashboardPage() {
                 { href: '/notes', icon: '📚', title: '浏览知识库', desc: `已整理 ${notesTotal} 篇笔记`, color: '#fff8f0' },
               ].map((a) => (
                 <Link key={a.href} href={a.href} style={{ textDecoration: 'none' }}>
-                  <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '22px 22px', cursor: 'pointer', transition: 'border-color .15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#d0d0d0')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#ebebeb')}
+                  <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '22px 22px', cursor: 'pointer', transition: 'border-color .15s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)')}
                   >
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: a.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{a.icon}</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 5 }}>{a.title}</div>
-                    <div style={{ fontSize: 13, color: '#999', lineHeight: 1.5 }}>{a.desc}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: 8, background: a.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{a.icon}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,0.87)', marginBottom: 5 }}>{a.title}</div>
+                    <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{a.desc}</div>
                   </div>
                 </Link>
               ))}
@@ -178,36 +178,36 @@ export default function DashboardPage() {
           {recentNotes.length > 0 ? (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#999', letterSpacing: '0.5px', textTransform: 'uppercase' }}>最近整理</div>
-                <Link href="/notes" style={{ fontSize: 13, color: '#888', textDecoration: 'none' }}>查看全部 →</Link>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b6b', letterSpacing: '0.5px', textTransform: 'uppercase' }}>最近整理</div>
+                <Link href="/notes" style={{ fontSize: 13, color: '#6b6b6b', textDecoration: 'none' }}>查看全部 →</Link>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
                 {recentNotes.map((note) => (
                   <Link key={note.id} href="/notes" style={{ textDecoration: 'none' }}>
-                    <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '18px 20px', cursor: 'pointer' }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#d0d0d0')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#ebebeb')}
+                    <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '18px 20px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)')}
                     >
                       <span style={{
-                        display: 'inline-block', fontSize: 11, padding: '3px 9px', borderRadius: 99, marginBottom: 10, fontWeight: 500,
+                        display: 'inline-block', fontSize: 11, padding: '3px 9px', borderRadius: 9999, marginBottom: 10, fontWeight: 500,
                         background: note.source_type === 'url' ? '#e8f0fe' : note.source_type === 'pdf' ? '#fff3e0' : '#e8f5e9',
                         color: note.source_type === 'url' ? '#1a56db' : note.source_type === 'pdf' ? '#e65100' : '#2e7d32',
                       }}>
                         {note.source_type === 'url' ? '网页' : note.source_type === 'pdf' ? 'PDF' : '文本'}
                       </span>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: '#111', lineHeight: 1.5, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{note.title}</div>
-                      <div style={{ fontSize: 12, color: '#bbb' }}>{formatDate(note.created_at)}</div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(0,0,0,0.87)', lineHeight: 1.5, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{note.title}</div>
+                      <div style={{ fontSize: 12, color: '#a0a0a0' }}>{formatDate(note.created_at)}</div>
                     </div>
                   </Link>
                 ))}
               </div>
             </div>
           ) : !loading && (
-            <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '32px', textAlign: 'center' }}>
+            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '32px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>📥</div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 8 }}>还没有笔记</div>
-              <div style={{ fontSize: 13, color: '#999', marginBottom: 20 }}>整理第一篇资料，开始构建你的专属知识库</div>
-              <a href="/ingest" style={{ background: '#111', color: '#fff', padding: '10px 22px', borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>去整理资料 →</a>
+              <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(0,0,0,0.87)', marginBottom: 8 }}>还没有笔记</div>
+              <div style={{ fontSize: 13, color: '#6b6b6b', marginBottom: 20 }}>整理第一篇资料，开始构建你的专属知识库</div>
+              <a href="/ingest" style={{ background: '#111', color: '#fff', padding: '10px 22px', borderRadius: 6, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>去整理资料 →</a>
             </div>
           )}
 

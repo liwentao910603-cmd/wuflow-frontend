@@ -165,7 +165,7 @@ export default function ReviewPage() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}>
       <Sidebar userEmail={userEmail} />
-      <main className="flex-1 overflow-y-auto" style={{ background: '#f9f9f8' }}>
+      <main className="flex-1 overflow-y-auto" style={{ background: '#f7f6f3' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 32px' }}>
 
           {/* ── 错误提示 ── */}
@@ -179,21 +179,21 @@ export default function ReviewPage() {
           {stage === "list" && (
             <>
               <div style={{ marginBottom: 32 }}>
-                <h1 style={{ fontSize: 26, fontWeight: 600, color: '#111', margin: '0 0 8px', letterSpacing: '-0.5px' }}>
+                <h1 style={{ fontSize: 26, fontWeight: 600, color: 'rgba(0,0,0,0.87)', margin: '0 0 8px', letterSpacing: '-0.5px' }}>
                   今日复习 📖
                 </h1>
-                <p style={{ fontSize: 14, color: '#888', margin: 0 }}>
+                <p style={{ fontSize: 14, color: '#6b6b6b', margin: 0 }}>
                   {listLoading ? "加载中..." : items.length === 0 ? "今天没有待复习的笔记" : `共 ${items.length} 篇笔记待复习`}
                 </p>
               </div>
 
               {listLoading ? (
-                <div style={{ textAlign: 'center', padding: '80px 0', color: '#ccc', fontSize: 14 }}>加载中...</div>
+                <div style={{ textAlign: 'center', padding: '80px 0', color: '#a0a0a0', fontSize: 14 }}>加载中...</div>
               ) : items.length === 0 ? (
-                <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 16, padding: '48px 32px', textAlign: 'center' }}>
+                <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '48px 32px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}>
                   <div style={{ fontSize: 40, marginBottom: 16 }}>🎉</div>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: '#111', marginBottom: 8 }}>今日复习全部完成！</div>
-                  <div style={{ fontSize: 14, color: '#999', marginBottom: 24 }}>继续保持，明天见</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: 'rgba(0,0,0,0.87)', marginBottom: 8 }}>今日复习全部完成！</div>
+                  <div style={{ fontSize: 14, color: '#6b6b6b', marginBottom: 24 }}>继续保持，明天见</div>
                   <Link href="/notes" style={{ background: '#111', color: '#fff', padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
                     去知识库添加更多笔记 →
                   </Link>
@@ -201,12 +201,12 @@ export default function ReviewPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {items.map((item, i) => (
-                    <div key={item.id} style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                    <div key={item.id} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#111', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(0,0,0,0.87)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {item.notes?.title || "未知笔记"}
                         </div>
-                        <div style={{ fontSize: 12, color: '#bbb' }}>
+                        <div style={{ fontSize: 12, color: '#a0a0a0' }}>
                           已复习 {item.repetition_count} 次 · 掌握度 {Math.round(item.mastery_level * 100)}%
                         </div>
                       </div>
@@ -238,10 +238,10 @@ export default function ReviewPage() {
               {/* 进度 */}
               <div style={{ marginBottom: 32 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ fontSize: 13, color: '#999' }}>
+                  <span style={{ fontSize: 13, color: '#6b6b6b' }}>
                     第 {questionIndex + 1} / {questions.length} 题
                   </span>
-                  <span style={{ fontSize: 12, color: '#bbb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>
+                  <span style={{ fontSize: 12, color: '#a0a0a0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 280 }}>
                     {currentNoteTitle}
                   </span>
                 </div>
@@ -251,11 +251,11 @@ export default function ReviewPage() {
               </div>
 
               {/* 题目卡片 */}
-              <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 16, padding: '32px', marginBottom: 16 }}>
-                <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: '#888', background: '#f5f5f5', padding: '3px 10px', borderRadius: 99, marginBottom: 20, letterSpacing: '0.5px' }}>
+              <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '32px', marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: '#6b6b6b', background: '#f7f6f3', padding: '3px 10px', borderRadius: 9999, marginBottom: 20, letterSpacing: '0.5px' }}>
                   {questions[questionIndex].type}
                 </div>
-                <p style={{ fontSize: 16, fontWeight: 500, color: '#111', lineHeight: 1.7, margin: '0 0 28px' }}>
+                <p style={{ fontSize: 16, fontWeight: 500, color: 'rgba(0,0,0,0.87)', lineHeight: 1.7, margin: '0 0 28px' }}>
                   {questions[questionIndex].question}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -295,16 +295,16 @@ export default function ReviewPage() {
           {stage === "reviewing" && (
             <>
               <div style={{ marginBottom: 28 }}>
-                <h2 style={{ fontSize: 20, fontWeight: 600, color: '#111', margin: '0 0 6px' }}>对照答案</h2>
-                <p style={{ fontSize: 13, color: '#999', margin: 0 }}>{currentNoteTitle}</p>
+                <h2 style={{ fontSize: 20, fontWeight: 600, color: 'rgba(0,0,0,0.87)', margin: '0 0 6px' }}>对照答案</h2>
+                <p style={{ fontSize: 13, color: '#6b6b6b', margin: 0 }}>{currentNoteTitle}</p>
               </div>
 
               {/* 题目答案对比 */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
                 {questions.map((q, i) => (
-                  <div key={i} style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 14, overflow: 'hidden' }}>
-                    <div style={{ padding: '16px 20px', borderBottom: '1px solid #f5f5f5' }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#888', marginBottom: 8, letterSpacing: '0.5px' }}>
+                  <div key={i} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6b6b6b', marginBottom: 8, letterSpacing: '0.5px' }}>
                         第 {i + 1} 题 · {q.type}
                       </div>
                       <p style={{ fontSize: 14, fontWeight: 500, color: '#111', margin: 0, lineHeight: 1.6 }}>{q.question}</p>
@@ -338,8 +338,8 @@ export default function ReviewPage() {
               </div>
 
               {/* 自评 */}
-              <div style={{ background: '#fff', border: '1px solid #ebebeb', borderRadius: 16, padding: '28px 28px' }}>
-                <p style={{ fontSize: 15, fontWeight: 600, color: '#111', margin: '0 0 20px' }}>整体掌握情况如何？</p>
+              <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '28px 28px', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,0.87)', margin: '0 0 20px' }}>整体掌握情况如何？</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
                   {ratingOptions.map(opt => (
                     <button
@@ -369,13 +369,13 @@ export default function ReviewPage() {
           {stage === "done" && (
             <div style={{ textAlign: 'center', padding: '80px 0' }}>
               <div style={{ fontSize: 48, marginBottom: 20 }}>🎉</div>
-              <h2 style={{ fontSize: 24, fontWeight: 600, color: '#111', margin: '0 0 10px' }}>今日复习全部完成！</h2>
-              <p style={{ fontSize: 14, color: '#888', margin: '0 0 32px' }}>坚持复习是掌握知识最有效的方式，继续保持！</p>
+              <h2 style={{ fontSize: 24, fontWeight: 600, color: 'rgba(0,0,0,0.87)', margin: '0 0 10px' }}>今日复习全部完成！</h2>
+              <p style={{ fontSize: 14, color: '#6b6b6b', margin: '0 0 32px' }}>坚持复习是掌握知识最有效的方式，继续保持！</p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                <Link href="/dashboard" style={{ background: '#fff', color: '#111', border: '1px solid #ebebeb', padding: '11px 24px', borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+                <Link href="/dashboard" style={{ background: '#fff', color: '#111', border: '1px solid #ebebeb', padding: '11px 24px', borderRadius: 6, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
                   回到主页
                 </Link>
-                <Link href="/notes" style={{ background: '#fff', color: '#111', border: '1px solid #ebebeb', padding: '11px 24px', borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+                <Link href="/notes" style={{ background: '#fff', color: '#111', border: '1px solid #ebebeb', padding: '11px 24px', borderRadius: 6, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
                   去知识库
                 </Link>
               </div>

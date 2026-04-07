@@ -62,7 +62,7 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen bg-white text-gray-900"
-      style={{ fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif" }}
+      style={{ fontFamily: "'Inter', 'Noto Sans SC', 'PingFang SC', sans-serif" }}
     >
       {/* 导航 */}
       <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">

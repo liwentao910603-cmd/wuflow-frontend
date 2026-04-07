@@ -60,8 +60,8 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
 
   return (
     <aside
-      style={{ width: collapsed ? 52 : 220, flexShrink: 0 }}
-      className="bg-gray-50 border-r border-gray-100 flex flex-col h-screen sticky top-0 transition-all duration-200 overflow-hidden"
+      style={{ width: collapsed ? 52 : 220, flexShrink: 0, background: '#f7f6f3', borderRight: '1px solid rgba(0,0,0,0.08)', fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}
+      className="flex flex-col h-screen sticky top-0 transition-all duration-200 overflow-hidden"
     >
       {/* Header */}
       <div className="h-11 flex items-center px-2 gap-2 flex-shrink-0">
@@ -77,7 +77,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
         </button>
         {!collapsed && (
           <div className="flex items-center gap-2 overflow-hidden">
-            <div className="w-6 h-6 rounded-md bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-700 flex-shrink-0">悟</div>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-medium flex-shrink-0" style={{ background: '#f1f0ed', color: 'rgba(0,0,0,0.87)' }}>悟</div>
             <span className="text-sm font-medium text-gray-900 whitespace-nowrap">WuFlow</span>
           </div>
         )}
@@ -100,7 +100,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           </Link>
         ))}
 
-        <div className="h-px bg-gray-100 my-1.5" />
+        <div className="h-px my-1.5" style={{ background: 'rgba(0,0,0,0.08)' }} />
         {!collapsed && <div className="text-xs text-gray-400 px-2 pb-1 pt-0.5 tracking-wide font-medium">学习</div>}
 
         {learnItems.map((item) =>
@@ -139,13 +139,13 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="flex-shrink-0 border-t border-gray-100 px-2 py-1.5 relative" ref={menuRef}>
+      <div className="flex-shrink-0 px-2 py-1.5 relative" style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }} ref={menuRef}>
         {/* 用户菜单弹窗 */}
         {menuOpen && (
-          <div className="bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 z-50 w-52" style={{ position: 'fixed', bottom: '60px', left: collapsed ? '60px' : '228px' }}>
-            <div className="px-3 py-2 border-b border-gray-100 mb-1">
-              <div className="text-sm font-medium text-gray-900">{displayName}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{userEmail}</div>
+          <div className="bg-white rounded-xl py-1.5 z-50 w-52" style={{ position: 'fixed', bottom: '60px', left: collapsed ? '60px' : '228px', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div className="px-3 py-2 mb-1" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+              <div className="text-sm font-medium" style={{ color: 'rgba(0,0,0,0.87)' }}>{displayName}</div>
+              <div className="text-xs mt-0.5" style={{ color: '#a0a0a0' }}>{userEmail}</div>
               <span className="inline-block mt-1.5 text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">免费版</span>
             </div>
             <button className="w-full flex items-center gap-2 px-3 h-9 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 rounded-md mx-auto transition-colors">
@@ -156,7 +156,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               升级到 Pro ✦
             </button>
-            <div className="h-px bg-gray-100 my-1" />
+            <div className="h-px my-1" style={{ background: 'rgba(0,0,0,0.06)' }} />
             <button
               onClick={handleSignOut}
               className="w-full flex items-center gap-2 px-3 h-9 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
@@ -178,7 +178,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
           className={`w-full flex items-center gap-2 px-2 h-10 rounded-md hover:bg-white transition-colors ${collapsed ? "justify-center px-0" : ""}`}
         >
-          <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-700 flex-shrink-0">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0" style={{ background: '#f1f0ed', color: 'rgba(0,0,0,0.87)' }}>
             {displayName.charAt(0)}
           </div>
           {!collapsed && (

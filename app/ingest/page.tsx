@@ -370,7 +370,7 @@ export default function IngestPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Noto Sans SC', 'PingFang SC', sans-serif" }}>
+    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Inter', 'Noto Sans SC', 'PingFang SC', sans-serif" }}>
       <Sidebar userEmail={userEmail ?? ""} />
       <div className="flex-1 flex flex-col overflow-hidden">
 
@@ -681,7 +681,7 @@ export default function IngestPage() {
                         </button>
                         {openMenu === note.id && (
                           <div
-                            style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', minWidth: 100, padding: '4px' }}
+                            style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)', minWidth: 100, padding: '4px' }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <button
