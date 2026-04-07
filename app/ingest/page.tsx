@@ -589,7 +589,7 @@ export default function IngestPage() {
         </div>
 
         {/* ── 右侧：知识库列表 ──────────────────────────── */}
-        <div className="flex-1 min-w-0 px-6 py-8 bg-gray-50/40 overflow-y-auto">
+        <div className="flex-1 min-w-0 px-6 py-8 bg-white overflow-y-auto">
           {/* 标题 */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">

@@ -9,9 +9,9 @@ Notion-inspired white minimalism: warm neutrals, no saturated accent, whisper bo
 ### Backgrounds
 | Token | Value | Usage |
 |-------|-------|-------|
-| `bg-page` | `#ffffff` | Page / main canvas |
-| `bg-secondary` | `#f7f6f3` | Sidebar, card inset areas, section alt |
-| `bg-hover` | `#f1f0ed` | Hover state, pressed state, icon badges |
+| `bg-page` | `#ffffff` | Page / main canvas, sidebar, all layout backgrounds |
+| `bg-secondary` | `#f7f6f3` | Small elements only: badges, tags, card inset areas, hero pills |
+| `bg-hover` | `#f1f0ed` | Hover state, pressed state, icon badges, avatar backgrounds |
 
 ### Text
 | Token | Value | Usage |
@@ -128,7 +128,7 @@ focus: border-color rgba(0,0,0,0.25)
 
 ### Sidebar
 ```
-background: #f7f6f3
+background: #ffffff
 border-right: 1px solid rgba(0,0,0,0.08)
 ```
 

@@ -165,7 +165,7 @@ export default function ReviewPage() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}>
       <Sidebar userEmail={userEmail} />
-      <main className="flex-1 overflow-y-auto" style={{ background: '#f7f6f3' }}>
+      <main className="flex-1 overflow-y-auto" style={{ background: '#ffffff' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 32px' }}>
 
           {/* ── 错误提示 ── */}

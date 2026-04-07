@@ -95,7 +95,7 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}>
       <Sidebar userEmail={userEmail} />
-      <main className="flex-1 overflow-y-auto" style={{ background: '#f7f6f3' }}>
+      <main className="flex-1 overflow-y-auto" style={{ background: '#ffffff' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '48px 48px 48px' }}>
 
           {/* 问候 */}

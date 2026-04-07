@@ -60,7 +60,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
 
   return (
     <aside
-      style={{ width: collapsed ? 52 : 220, flexShrink: 0, background: '#f7f6f3', borderRight: '1px solid rgba(0,0,0,0.08)', fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}
+      style={{ width: collapsed ? 52 : 220, flexShrink: 0, background: '#ffffff', borderRight: '1px solid rgba(0,0,0,0.08)', fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}
       className="flex flex-col h-screen sticky top-0 transition-all duration-200 overflow-hidden"
     >
       {/* Header */}
