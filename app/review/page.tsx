@@ -25,7 +25,9 @@ interface ReviewItem {
 interface Question {
   type: string;
   question: string;
-  answer: string;
+  options: { A: string; B: string; C: string; D: string };
+  answer: string;        // "A" | "B" | "C" | "D"
+  explanation: string;
 }
 
 type Stage =
@@ -133,11 +135,11 @@ export default function ReviewPage() {
         }),
       });
 
-      // 还有下一篇
-      if (currentIndex < items.length - 1) {
+      // 还有下一篇 → 回列表继续
+      const remaining = items.filter((_, i) => i !== currentIndex);
+      setItems(remaining);
+      if (remaining.length > 0) {
         setStage("list");
-        // 标记当前已完成（从列表移除）
-        setItems(prev => prev.filter((_, i) => i !== currentIndex));
       } else {
         setStage("done");
       }
@@ -240,20 +242,25 @@ export default function ReviewPage() {
                 <p style={{ fontSize: 16, fontWeight: 500, color: '#111', lineHeight: 1.7, margin: '0 0 28px' }}>
                   {questions[questionIndex].question}
                 </p>
-                <textarea
-                  value={answers[questionIndex]}
-                  onChange={e => handleAnswerChange(e.target.value)}
-                  placeholder="写下你的答案..."
-                  autoFocus
-                  style={{
-                    width: '100%', minHeight: 120, border: '1px solid #e5e7eb', borderRadius: 10,
-                    padding: '14px 16px', fontSize: 14, color: '#111', lineHeight: 1.6,
-                    resize: 'vertical', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-                    background: '#fafafa'
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#111'}
-                  onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(['A','B','C','D'] as const).map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => handleAnswerChange(opt)}
+                      style={{
+                        textAlign: 'left', padding: '14px 18px', borderRadius: 10, fontSize: 14,
+                        border: `2px solid ${answers[questionIndex] === opt ? '#111' : '#e5e7eb'}`,
+                        background: answers[questionIndex] === opt ? '#111' : '#fff',
+                        color: answers[questionIndex] === opt ? '#fff' : '#333',
+                        cursor: 'pointer', transition: 'all .15s', lineHeight: 1.5,
+                        fontFamily: 'inherit'
+                      }}
+                    >
+                      <span style={{ fontWeight: 600, marginRight: 10 }}>{opt}.</span>
+                      {questions[questionIndex].options[opt]}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -285,17 +292,29 @@ export default function ReviewPage() {
                       </div>
                       <p style={{ fontSize: 14, fontWeight: 500, color: '#111', margin: 0, lineHeight: 1.6 }}>{q.question}</p>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-                      <div style={{ padding: '14px 20px', borderRight: '1px solid #f5f5f5' }}>
-                        <div style={{ fontSize: 11, color: '#bbb', marginBottom: 6, fontWeight: 600 }}>你的答案</div>
-                        <p style={{ fontSize: 13, color: answers[i] ? '#333' : '#ccc', margin: 0, lineHeight: 1.6 }}>
-                          {answers[i] || "（未作答）"}
-                        </p>
+                    <div style={{ padding: '14px 20px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                        {(['A','B','C','D'] as const).map(opt => (
+                          <div key={opt} style={{
+                            padding: '10px 14px', borderRadius: 8, fontSize: 13,
+                            background: opt === q.answer ? '#f0fdf4' : answers[i] === opt && answers[i] !== q.answer ? '#fef2f2' : '#f9f9f8',
+                            border: `1px solid ${opt === q.answer ? '#bbf7d0' : answers[i] === opt && answers[i] !== q.answer ? '#fecaca' : '#f0f0f0'}`,
+                            color: opt === q.answer ? '#16a34a' : answers[i] === opt && answers[i] !== q.answer ? '#dc2626' : '#666',
+                            fontWeight: opt === q.answer ? 600 : 400,
+                            display: 'flex', alignItems: 'center', gap: 8
+                          }}>
+                            <span style={{ fontWeight: 700 }}>{opt}.</span>
+                            {q.options[opt]}
+                            {opt === q.answer && <span style={{ marginLeft: 'auto', fontSize: 12 }}>✓ 正确答案</span>}
+                            {answers[i] === opt && answers[i] !== q.answer && <span style={{ marginLeft: 'auto', fontSize: 12 }}>✗ 你的选择</span>}
+                          </div>
+                        ))}
                       </div>
-                      <div style={{ padding: '14px 20px', background: '#f9fdf9' }}>
-                        <div style={{ fontSize: 11, color: '#16a34a', marginBottom: 6, fontWeight: 600 }}>参考答案</div>
-                        <p style={{ fontSize: 13, color: '#333', margin: 0, lineHeight: 1.6 }}>{q.answer}</p>
-                      </div>
+                      {q.explanation && (
+                        <div style={{ fontSize: 12, color: '#888', background: '#fffbeb', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid #fbbf24' }}>
+                          💡 {q.explanation}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -336,7 +355,7 @@ export default function ReviewPage() {
               <h2 style={{ fontSize: 24, fontWeight: 600, color: '#111', margin: '0 0 10px' }}>今日复习全部完成！</h2>
               <p style={{ fontSize: 14, color: '#888', margin: '0 0 32px' }}>坚持复习是掌握知识最有效的方式，继续保持！</p>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                <Link href="/dashboard" style={{ background: '#111', color: '#fff', padding: '11px 24px', borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+                <Link href="/dashboard" style={{ background: '#fff', color: '#111', border: '1px solid #ebebeb', padding: '11px 24px', borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
                   回到主页
                 </Link>
                 <Link href="/notes" style={{ background: '#fff', color: '#111', border: '1px solid #ebebeb', padding: '11px 24px', borderRadius: 8, fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
