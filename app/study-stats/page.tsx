@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getCache, setCache } from "@/lib/cache";
 import Sidebar from "@/components/Sidebar";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -137,24 +138,40 @@ export default function StudyStatsPage() {
   const fetchAll = async (token: string) => {
     const h = { Authorization: `Bearer ${token}` };
     try {
-      const [statsRes, heatmapRes, historyRes] = await Promise.all([
-        fetch(`${API}/study/stats`, { headers: h }),
-        fetch(`${API}/study/heatmap`, { headers: h }),
-        fetch(`${API}/study/history`, { headers: h }),
-      ]);
-      const [statsData, heatmapData, historyData] = await Promise.all([
-        statsRes.json(), heatmapRes.json(), historyRes.json(),
-      ]);
+      const cachedHeatmap = getCache('stats:heatmap') as Record<string, number> | null;
+      const cachedLogs = getCache('stats:logs') as StudyLog[] | null;
 
-      setStats(statsData);
-      setHeatmap(heatmapData.heatmap || {});
-      setLogs(historyData.logs || []);
+      if (cachedHeatmap && cachedLogs) {
+        // heatmap + logs 命中缓存，仅刷新 stats
+        const statsRes = await fetch(`${API}/study/stats`, { headers: h });
+        const statsData = await statsRes.json();
+        setStats(statsData);
+        setHeatmap(cachedHeatmap);
+        setLogs(cachedLogs);
+        setTotalDays(Object.keys(cachedHeatmap).filter(k => cachedHeatmap[k] > 0).length);
+        setTotalMinutes(cachedLogs.reduce((sum, l) => sum + l.duration_minutes, 0));
+      } else {
+        const [statsRes, heatmapRes, historyRes] = await Promise.all([
+          fetch(`${API}/study/stats`, { headers: h }),
+          fetch(`${API}/study/heatmap`, { headers: h }),
+          fetch(`${API}/study/history`, { headers: h }),
+        ]);
+        const [statsData, heatmapData, historyData] = await Promise.all([
+          statsRes.json(), heatmapRes.json(), historyRes.json(),
+        ]);
 
-      // 统计总天数和总时长
-      const hm = heatmapData.heatmap || {};
-      setTotalDays(Object.keys(hm).filter(k => hm[k] > 0).length);
-      const allLogs = historyData.logs || [];
-      setTotalMinutes(allLogs.reduce((sum: number, l: StudyLog) => sum + l.duration_minutes, 0));
+        setStats(statsData);
+        setHeatmap(heatmapData.heatmap || {});
+        setLogs(historyData.logs || []);
+
+        const hm = heatmapData.heatmap || {};
+        setTotalDays(Object.keys(hm).filter(k => hm[k] > 0).length);
+        const allLogs = historyData.logs || [];
+        setTotalMinutes(allLogs.reduce((sum: number, l: StudyLog) => sum + l.duration_minutes, 0));
+
+        setCache('stats:heatmap', hm);
+        setCache('stats:logs', allLogs);
+      }
     } catch {
       setLoadError(true);
     }

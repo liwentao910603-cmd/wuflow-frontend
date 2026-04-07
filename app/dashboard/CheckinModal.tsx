@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { invalidatePrefix } from "@/lib/cache";
 const API = process.env.NEXT_PUBLIC_API_URL;
 
 export default function CheckinModal({ onClose, onSuccess, token }: { onClose: () => void; onSuccess: () => void; token: string }) {
@@ -19,6 +20,8 @@ export default function CheckinModal({ onClose, onSuccess, token }: { onClose: (
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ content, duration_minutes: duration, mood, note_tags: [] }),
       });
+      invalidatePrefix('stats:');
+      invalidatePrefix('dashboard:');
       onSuccess();
     } catch {
       setSubmitError("提交失败，请重试");

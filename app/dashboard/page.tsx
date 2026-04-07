@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getCache, setCache } from "@/lib/cache";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 import CheckinModal from "./CheckinModal";
@@ -53,25 +54,43 @@ export default function DashboardPage() {
       setRecentNotes(data.notes?.slice(0, 3) || []);
     } catch {}
     try {
-      const reviewRes = await fetch(`${API}/review/today`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const reviewData = await reviewRes.json();
-      setTodayReviewCount(reviewData.count || 0);
+      const cachedToday = getCache('review:today') as { count: number } | null;
+      if (cachedToday) {
+        setTodayReviewCount(cachedToday.count || 0);
+      } else {
+        const reviewRes = await fetch(`${API}/review/today`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const reviewData = await reviewRes.json();
+        setTodayReviewCount(reviewData.count || 0);
+        setCache('review:today', reviewData);
+      }
     } catch {}
     try {
-      const tmrRes = await fetch(`${API}/review/tomorrow`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const tmrData = await tmrRes.json();
-      setTomorrowReview(tmrData);
+      const cachedTmr = getCache('review:tomorrow') as { count: number; items: { notes: { title: string } }[] } | null;
+      if (cachedTmr) {
+        setTomorrowReview(cachedTmr);
+      } else {
+        const tmrRes = await fetch(`${API}/review/tomorrow`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const tmrData = await tmrRes.json();
+        setTomorrowReview(tmrData);
+        setCache('review:tomorrow', tmrData);
+      }
     } catch {}
     try {
-      const statsRes = await fetch(`${API}/study/stats`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const statsData = await statsRes.json();
-      setStudyStats(statsData);
+      const cachedStats = getCache('dashboard:stats') as { week_hours: number; streak_days: number; logged_today: boolean } | null;
+      if (cachedStats) {
+        setStudyStats(cachedStats);
+      } else {
+        const statsRes = await fetch(`${API}/study/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const statsData = await statsRes.json();
+        setStudyStats(statsData);
+        setCache('dashboard:stats', statsData);
+      }
     } catch {}
     setLoading(false);
   };

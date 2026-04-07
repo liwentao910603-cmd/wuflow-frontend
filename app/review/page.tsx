@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getCache, setCache, invalidateCache, invalidatePrefix } from "@/lib/cache";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 
@@ -72,11 +73,17 @@ export default function ReviewPage() {
     setListLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API}/review/today`, {
-        headers: { Authorization: `Bearer ${t}` },
-      });
-      const data = await res.json();
-      setItems(data.items || []);
+      const cached = getCache('review:today') as { items: ReviewItem[]; count: number } | null;
+      if (cached) {
+        setItems(cached.items || []);
+      } else {
+        const res = await fetch(`${API}/review/today`, {
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        const data = await res.json();
+        setItems(data.items || []);
+        setCache('review:today', data);
+      }
     } catch {
       setError("网络错误，请刷新重试");
     }
@@ -143,6 +150,10 @@ export default function ReviewPage() {
           self_rating: selfRating,
         }),
       });
+
+      // 提交后缓存失效
+      invalidateCache('review:today');
+      invalidatePrefix('dashboard:');
 
       // 还有下一篇 → 回列表继续
       const remaining = items.filter((_, i) => i !== currentIndex);

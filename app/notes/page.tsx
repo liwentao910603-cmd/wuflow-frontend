@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { getCache, setCache, invalidatePrefix } from "@/lib/cache";
 import Sidebar from "@/components/Sidebar";
 
 interface Note {
@@ -84,9 +85,22 @@ export default function NotesPage() {
   };
 
   const fetchNotes = useCallback(async (t: string) => {
+    const cacheKey = `notes:list:${page}:${filter}`;
+
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     setLoading(true);
+
+    // 检查缓存（仅在无处理中笔记时使用）
+    const cached = getCache(cacheKey) as { notes: Note[]; total: number; totalPages: number } | null;
+    if (cached) {
+      setNotes(cached.notes);
+      setTotal(cached.total);
+      setTotalPages(cached.totalPages);
+      setLoading(false);
+      return;
+    }
+
     try {
       const params = new URLSearchParams({
         page: String(page),
@@ -123,6 +137,9 @@ export default function NotesPage() {
       const stillProcessing = finalNotes.filter(n => n.status === 'processing');
       if (stillProcessing.length > 0) {
         setTimeout(() => fetchNotes(tokenRef.current), 3000);
+      } else {
+        // 所有笔记已生成完成，写入缓存
+        setCache(cacheKey, { notes: finalNotes, total: data.total || 0, totalPages: data.total_pages || 1 });
       }
       setLoading(false);
     } catch (e: unknown) {
@@ -204,6 +221,7 @@ export default function NotesPage() {
       });
     } finally {
       setDeleting(null);
+      invalidatePrefix('notes:list');
       fetchNotes(tokenRef.current);
     }
   };
