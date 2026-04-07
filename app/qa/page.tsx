@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Sidebar from "@/components/Sidebar";
 
@@ -10,6 +10,9 @@ const supabase = createClient();
 interface Source { title: string; source_url: string; source_type: string; similarity: number }
 interface Message { role: "user" | "assistant"; content: string; sources?: Source[]; has_context?: boolean }
 
+const HISTORY_KEY = (uid: string) => `wuflow_qa_history_${uid}`;
+const MAX_HISTORY = 40; // 最多保留40条消息
+
 export default function QAPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput]       = useState("");
@@ -17,43 +20,77 @@ export default function QAPage() {
   const bottomRef               = useRef<HTMLDivElement>(null);
   const textareaRef             = useRef<HTMLTextAreaElement>(null);
 
-  // Auth
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
+  // ── Auth + 加载历史 ──────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
       setUserEmail(session.user.email ?? null);
       setAccessToken(session.access_token ?? null);
+      const uid = session.user.id;
+      setUserId(uid);
+      // 从 localStorage 恢复历史
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY(uid));
+        if (raw) setMessages(JSON.parse(raw));
+      } catch { /* ignore */ }
     });
   }, []);
+
+  // ── 持久化历史到 localStorage ────────────────────────────────
+  useEffect(() => {
+    if (!userId || messages.length === 0) return;
+    try {
+      // 超过上限时截断最早的消息，保留最新的
+      const toSave = messages.length > MAX_HISTORY
+        ? messages.slice(messages.length - MAX_HISTORY)
+        : messages;
+      localStorage.setItem(HISTORY_KEY(userId), JSON.stringify(toSave));
+    } catch { /* ignore quota errors */ }
+  }, [messages, userId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     window.location.href = "/";
   };
 
+  const clearHistory = () => {
+    setMessages([]);
+    if (userId) localStorage.removeItem(HISTORY_KEY(userId));
+  };
+
+  // ── 滚动到底部 ───────────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  // ── Bug1 修复：用 useEffect 做 textarea resize，不在 onChange 里操作 DOM ──
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "44px";
+    el.style.height = Math.min(el.scrollHeight, 140) + "px";
+  }, [input]);
 
   async function send() {
     const q = input.trim();
     if (!q || loading) return;
     const userMsg: Message = { role: "user", content: q };
     const next = [...messages, userMsg];
-    setMessages(next); setInput(""); setLoading(true);
-    if (textareaRef.current) textareaRef.current.style.height = "44px";
+    setMessages(next);
+    setInput("");
+    setLoading(true);
 
     try {
       const history = messages.map(m => ({ role: m.role, content: m.content }));
-      const token = accessToken;
       const res = await fetch(`${API}/qa/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({ question: q, conversation_history: history }),
       });
@@ -68,7 +105,6 @@ export default function QAPage() {
       let buffer = "";
       let accContent = "";
       let sources: Source[] = [];
-      let has_context = true;
       let streamStarted = false;
 
       while (true) {
@@ -86,13 +122,11 @@ export default function QAPage() {
             const event = JSON.parse(raw);
             if (event.type === "sources") {
               sources = event.data || [];
-              // sources 先到时，message 还没创建，不 setMessages，等 text 事件时一起带入
             } else if (event.type === "text") {
               accContent += event.data;
               setMessages(prev => {
                 const arr = [...prev];
                 const last = arr[arr.length - 1];
-                // 如果最后一条已经是 assistant 消息就更新，否则新增
                 if (last?.role === "assistant") {
                   arr[arr.length - 1] = { ...last, content: accContent };
                 } else {
@@ -105,10 +139,10 @@ export default function QAPage() {
                 return arr;
               });
             } else if (event.type === "done") {
-              has_context = event.has_context ?? true;
+              const has_context = event.has_context ?? true;
               setMessages(prev => {
                 const arr = [...prev];
-                arr[arr.length - 1] = { ...arr[arr.length - 1], has_context };
+                arr[arr.length - 1] = { ...arr[arr.length - 1], sources, has_context };
                 return arr;
               });
             } else if (event.type === "error") {
@@ -122,7 +156,6 @@ export default function QAPage() {
     } catch (e: any) {
       setMessages(prev => {
         const arr = [...prev];
-        // 如果最后一条是空的 assistant 消息，替换它
         if (arr[arr.length - 1]?.role === "assistant" && !arr[arr.length - 1].content) {
           arr[arr.length - 1] = { role: "assistant", content: `出错了：${e.message}` };
         } else {
@@ -135,12 +168,6 @@ export default function QAPage() {
     }
   }
 
-  function autoResize(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setInput(e.target.value);
-    e.target.style.height = "44px";
-    e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
-  }
-
   return (
     <div style={{ ...s.page, flexDirection: "row" }}>
       <Sidebar userEmail={userEmail ?? ""} />
@@ -151,6 +178,7 @@ export default function QAPage() {
         *{box-sizing:border-box}
         textarea:focus{outline:none;border-color:rgba(0,0,0,0.25)!important;}
         .suggest-btn:hover{background:#F0F0EC!important}
+        .clear-btn:hover{background:#f5f5f2!important}
       `}</style>
 
       {/* Messages */}
@@ -174,6 +202,16 @@ export default function QAPage() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* 有历史时显示清空按钮 */}
+          {messages.length > 0 && (
+            <div style={s.historyBar}>
+              <span style={s.historyCount}>共 {messages.length} 条对话</span>
+              <button className="clear-btn" style={s.clearBtn} onClick={clearHistory}>
+                清空历史
+              </button>
             </div>
           )}
 
@@ -232,7 +270,7 @@ export default function QAPage() {
             style={s.textarea}
             placeholder="问问你的知识库…"
             value={input}
-            onChange={autoResize}
+            onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
             rows={1}
           />
@@ -255,49 +293,41 @@ export default function QAPage() {
 
 const BL = "#111";
 const s: Record<string, React.CSSProperties> = {
-  page:       { minHeight: "100vh", background: "#ffffff", fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif", color: "rgba(0,0,0,0.87)", display: "flex", flexDirection: "column" },
-  nav:        { background: "#fff", borderBottom: "1px solid rgba(0,0,0,0.08)", position: "sticky", top: 0, zIndex: 100, flexShrink: 0 },
-  navInner:   { maxWidth: 860, margin: "0 auto", padding: "0 24px", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between" },
-  brand:      { display: "flex", alignItems: "center", gap: 8, textDecoration: "none" },
-  brandIcon:  { fontSize: 18, fontWeight: 700, color: BL, fontFamily: "'Noto Serif SC',serif" },
-  brandName:  { fontSize: 15, fontWeight: 600, color: "rgba(0,0,0,0.87)", letterSpacing: 0.5 },
-  navLinks:   { display: "flex", alignItems: "center", gap: 24 },
-  navLink:    { fontSize: 14, color: "#6b6b6b", textDecoration: "none", cursor: "pointer" },
-  navActive:  { color: "rgba(0,0,0,0.87)", fontWeight: 500 },
-  userBar:    { display: "flex", alignItems: "center", gap: 12, paddingLeft: 16, borderLeft: "1px solid rgba(0,0,0,0.08)" },
-  userEmail:  { fontSize: 12, color: "#a0a0a0" },
-  signOutBtn: { fontSize: 12, color: "#a0a0a0", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" },
-  main:       { flex: 1, overflow: "auto" },
-  feed:       { maxWidth: 760, margin: "0 auto", padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: 16 },
-  empty:      { textAlign: "center", padding: "48px 0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 },
-  emptyIcon:  { width: 56, height: 56, borderRadius: "50%", background: "#f7f6f3", display: "flex", alignItems: "center", justifyContent: "center" },
-  emptyTitle: { fontSize: 20, fontWeight: 700, margin: 0 },
-  emptySub:   { fontSize: 14, color: "#6b6b6b", margin: 0 },
-  suggests:   { display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 440, marginTop: 4 },
-  suggest:    { background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 6, padding: "10px 16px", cursor: "pointer", fontSize: 14, fontFamily: "inherit", textAlign: "left", color: "rgba(0,0,0,0.87)", transition: "background 0.15s" },
-  row:        { display: "flex", gap: 12, alignItems: "flex-start", animation: "wf-in 0.25s ease" },
-  rowUser:    { flexDirection: "row-reverse" },
-  avatar:     { width: 32, height: 32, borderRadius: 8, background: "#111", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: "'Noto Serif SC',serif" },
-  bubble:     { maxWidth: "78%", borderRadius: 8, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 },
-  bubbleUser: { background: "#111", color: "#fff" },
-  bubbleBot:  { background: "#fff", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)" },
-  bubbleLoad: { flexDirection: "row", alignItems: "center", gap: 10 },
-  text:       { margin: 0, fontSize: 14, lineHeight: 1.85, whiteSpace: "pre-wrap" },
-  sources:    { borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 6 },
-  srcHead:    { fontSize: 11, fontWeight: 600, color: "#a0a0a0", letterSpacing: 0.8, textTransform: "uppercase" },
-  srcRow:     { display: "flex", alignItems: "center", gap: 8 },
-  srcDot:     { width: 5, height: 5, borderRadius: "50%", background: "#111", flexShrink: 0 },
-  srcTitle:   { fontSize: 13, color: "rgba(0,0,0,0.87)", flex: 1 },
-  srcLink:    { fontSize: 12, color: "#111", textDecoration: "none" },
-  srcSim:     { fontSize: 11, color: "#a0a0a0" },
-  noCtx:      { fontSize: 13, color: "#6b6b6b", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 8 },
-  noCtxLink:  { color: "#111", textDecoration: "none" },
-  spinner:    { display: "inline-block", width: 14, height: 14, border: "2px solid rgba(0,0,0,0.1)", borderTopColor: "#111", borderRadius: "50%", animation: "wf-spin 0.7s linear infinite", flexShrink: 0 },
-  loadTxt:    { fontSize: 13, color: "#6b6b6b" },
-  bar:        { borderTop: "1px solid rgba(0,0,0,0.08)", background: "#fff", padding: "12px 24px 16px", flexShrink: 0 },
-  barInner:   { maxWidth: 760, margin: "0 auto", display: "flex", gap: 10, alignItems: "flex-end" },
-  textarea:   { flex: 1, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 6, fontSize: 14, padding: "10px 14px", color: "rgba(0,0,0,0.87)", fontFamily: "inherit", resize: "none", lineHeight: 1.6, height: 44, maxHeight: 140, overflow: "auto", transition: "border-color 0.15s" },
-  send:       { width: 44, height: 44, background: "#111", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "opacity 0.15s" },
-  sendDis:    { opacity: 0.4, cursor: "not-allowed" },
-  barHint:    { maxWidth: 760, margin: "6px auto 0", fontSize: 11, color: "#a0a0a0", textAlign: "center" },
+  page:        { minHeight: "100vh", background: "#ffffff", fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif", color: "rgba(0,0,0,0.87)", display: "flex", flexDirection: "column" },
+  main:        { flex: 1, overflow: "auto" },
+  feed:        { maxWidth: 760, margin: "0 auto", padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: 16 },
+  empty:       { textAlign: "center", padding: "48px 0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 },
+  emptyIcon:   { width: 56, height: 56, borderRadius: "50%", background: "#f7f6f3", display: "flex", alignItems: "center", justifyContent: "center" },
+  emptyTitle:  { fontSize: 20, fontWeight: 700, margin: 0 },
+  emptySub:    { fontSize: 14, color: "#6b6b6b", margin: 0 },
+  suggests:    { display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 440, marginTop: 4 },
+  suggest:     { background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 6, padding: "10px 16px", cursor: "pointer", fontSize: 14, fontFamily: "inherit", textAlign: "left", color: "rgba(0,0,0,0.87)", transition: "background 0.15s" },
+  historyBar:  { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 0 4px" },
+  historyCount:{ fontSize: 12, color: "#a0a0a0" },
+  clearBtn:    { fontSize: 12, color: "#6b6b6b", background: "none", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontFamily: "inherit", transition: "background 0.15s" },
+  row:         { display: "flex", gap: 12, alignItems: "flex-start", animation: "wf-in 0.25s ease" },
+  rowUser:     { flexDirection: "row-reverse" },
+  avatar:      { width: 32, height: 32, borderRadius: 8, background: "#111", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: "'Noto Serif SC',serif" },
+  bubble:      { maxWidth: "78%", borderRadius: 8, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 },
+  bubbleUser:  { background: "#111", color: "#fff" },
+  bubbleBot:   { background: "#fff", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)" },
+  bubbleLoad:  { flexDirection: "row", alignItems: "center", gap: 10 },
+  text:        { margin: 0, fontSize: 14, lineHeight: 1.85, whiteSpace: "pre-wrap" },
+  sources:     { borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 6 },
+  srcHead:     { fontSize: 11, fontWeight: 600, color: "#a0a0a0", letterSpacing: 0.8, textTransform: "uppercase" },
+  srcRow:      { display: "flex", alignItems: "center", gap: 8 },
+  srcDot:      { width: 5, height: 5, borderRadius: "50%", background: "#111", flexShrink: 0 },
+  srcTitle:    { fontSize: 13, color: "rgba(0,0,0,0.87)", flex: 1 },
+  srcLink:     { fontSize: 12, color: "#111", textDecoration: "none" },
+  srcSim:      { fontSize: 11, color: "#a0a0a0" },
+  noCtx:       { fontSize: 13, color: "#6b6b6b", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 8 },
+  noCtxLink:   { color: "#111", textDecoration: "none" },
+  spinner:     { display: "inline-block", width: 14, height: 14, border: "2px solid rgba(0,0,0,0.1)", borderTopColor: "#111", borderRadius: "50%", animation: "wf-spin 0.7s linear infinite", flexShrink: 0 },
+  loadTxt:     { fontSize: 13, color: "#6b6b6b" },
+  bar:         { borderTop: "1px solid rgba(0,0,0,0.08)", background: "#fff", padding: "12px 24px 16px", flexShrink: 0 },
+  barInner:    { maxWidth: 760, margin: "0 auto", display: "flex", gap: 10, alignItems: "flex-end" },
+  textarea:    { flex: 1, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 6, fontSize: 14, padding: "10px 14px", color: "rgba(0,0,0,0.87)", fontFamily: "inherit", resize: "none", lineHeight: 1.6, height: 44, maxHeight: 140, overflow: "auto", transition: "border-color 0.15s" },
+  send:        { width: 44, height: 44, background: "#111", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "opacity 0.15s" },
+  sendDis:     { opacity: 0.4, cursor: "not-allowed" },
+  barHint:     { maxWidth: 760, margin: "6px auto 0", fontSize: 11, color: "#a0a0a0", textAlign: "center" },
 };
