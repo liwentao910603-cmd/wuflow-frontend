@@ -23,8 +23,9 @@ export default function QAPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserEmail(session?.user?.email ?? null);
-      setAccessToken(session?.access_token ?? null);
+      if (!session) { window.location.href = "/login"; return; }
+      setUserEmail(session.user.email ?? null);
+      setAccessToken(session.access_token ?? null);
     });
   }, []);
 

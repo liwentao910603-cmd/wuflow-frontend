@@ -93,7 +93,8 @@ export default function IngestPage() {
   // ── Init ─────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserEmail(session?.user?.email ?? null);
+      if (!session) { window.location.href = "/login"; return; }
+      setUserEmail(session.user.email ?? null);
     });
   }, []);
 
@@ -303,7 +304,6 @@ export default function IngestPage() {
       try { data = await res.json(); } catch { /* 非 JSON 响应体，忽略 */ }
 
       if (!res.ok) {
-        console.log("后端错误原文:", data);
         const detail = data.detail;
         let msg: string;
         if (typeof detail === "string" && detail) {

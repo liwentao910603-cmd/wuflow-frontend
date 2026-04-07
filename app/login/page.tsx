@@ -23,9 +23,7 @@ export default function LoginPage() {
 
     try {
       if (mode === "login") {
-        console.log("[login] 尝试登录:", email);
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        console.log("[login] 登录结果:", { user: data?.user?.email, error });
 
         if (error) {
           setStatus("error");
@@ -38,9 +36,7 @@ export default function LoginPage() {
           window.location.href = "/dashboard";
         }
       } else {
-        console.log("[login] 尝试注册:", email);
         const { data, error } = await supabase.auth.signUp({ email, password });
-        console.log("[login] 注册结果:", { user: data?.user?.email, error });
 
         if (error) {
           setStatus("error");
