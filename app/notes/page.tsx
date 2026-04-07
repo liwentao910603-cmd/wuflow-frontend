@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import Sidebar from "@/components/Sidebar";
@@ -63,12 +63,19 @@ export default function NotesPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
+  const tokenRef = useRef("");
+  const abortRef = useRef<AbortController | null>(null);
+  const pollCount = useRef<Record<string, number>>({});
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
       setUserEmail(session.user.email ?? null);
-      setAccessToken(session.access_token ?? null);
+      setAccessToken(session.access_token);
+      tokenRef.current = session.access_token;
+      fetchNotes(session.access_token);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSignOut = async () => {
@@ -76,7 +83,9 @@ export default function NotesPage() {
     window.location.href = "/";
   };
 
-  const fetchNotes = useCallback(async () => {
+  const fetchNotes = useCallback(async (t: string) => {
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -84,27 +93,49 @@ export default function NotesPage() {
         page_size: "12",
         ...(filter !== "all" ? { source_type: filter } : {}),
       });
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
       const res = await fetch(`${API}/notes?${params}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${t}` },
+        signal: abortRef.current.signal,
       });
       const data = await res.json();
-      setNotes(data.notes || []);
+      const notesList: Note[] = data.notes || [];
+
+      // #11 — 超过20次轮询标记为超时
+      const timedOutIds = new Set<string>();
+      notesList.forEach(n => {
+        if (n.status === 'processing') {
+          pollCount.current[n.id] = (pollCount.current[n.id] || 0) + 1;
+          if (pollCount.current[n.id] > 20) {
+            timedOutIds.add(n.id);
+            delete pollCount.current[n.id];
+          }
+        } else {
+          delete pollCount.current[n.id];
+        }
+      });
+      const finalNotes = notesList.map(n =>
+        timedOutIds.has(n.id) ? { ...n, status: 'error' } : n
+      );
+      setNotes(finalNotes);
       setTotal(data.total || 0);
       setTotalPages(data.total_pages || 1);
-      const hasProcessing = (data.notes || []).some((n: Note) => n.status === 'processing');
-      if (hasProcessing) {
-        setTimeout(() => fetchNotes(), 3000);
+
+      const stillProcessing = finalNotes.filter(n => n.status === 'processing');
+      if (stillProcessing.length > 0) {
+        setTimeout(() => fetchNotes(tokenRef.current), 3000);
       }
-    } catch {
+      setLoading(false);
+    } catch (e: unknown) {
+      if ((e as Error).name === 'AbortError') return;
       setNotes([]);
-    } finally {
       setLoading(false);
     }
   }, [page, filter]);
 
-  useEffect(() => { fetchNotes(); }, [fetchNotes]);
+  // page/filter 变化时重新拉取（token 已就绪后才触发）
+  useEffect(() => {
+    if (tokenRef.current) fetchNotes(tokenRef.current);
+  }, [page, filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 展开笔记时拉取复习状态
   const fetchReviewStatus = useCallback(async (noteId: string) => {
@@ -167,14 +198,13 @@ export default function NotesPage() {
     if (!confirm("确认删除这条笔记？删除后无法恢复。")) return;
     setDeleting(id);
     try {
-      const token = accessToken;
       await fetch(`${API}/notes/${id}`, {
         method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${tokenRef.current}` },
       });
     } finally {
       setDeleting(null);
-      fetchNotes();
+      fetchNotes(tokenRef.current);
     }
   };
 
@@ -278,6 +308,11 @@ export default function NotesPage() {
                       {note.status === 'processing' && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-500 font-medium animate-pulse">
                           整理中...
+                        </span>
+                      )}
+                      {note.status === 'error' && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-400 font-medium">
+                          生成超时
                         </span>
                       )}
                     </div>
