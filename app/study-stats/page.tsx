@@ -122,6 +122,7 @@ export default function StudyStatsPage() {
   const [heatmap, setHeatmap] = useState<Record<string, number>>({});
   const [logs, setLogs] = useState<StudyLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [totalDays, setTotalDays] = useState(0);
   const [totalMinutes, setTotalMinutes] = useState(0);
 
@@ -154,7 +155,9 @@ export default function StudyStatsPage() {
       setTotalDays(Object.keys(hm).filter(k => hm[k] > 0).length);
       const allLogs = historyData.logs || [];
       setTotalMinutes(allLogs.reduce((sum: number, l: StudyLog) => sum + l.duration_minutes, 0));
-    } catch {}
+    } catch {
+      setLoadError(true);
+    }
     setLoading(false);
   };
 
@@ -177,9 +180,16 @@ export default function StudyStatsPage() {
               学习统计 📊
             </h1>
             <p style={{ fontSize: 14, color: "#888", margin: 0 }}>
-              {loading ? "加载中..." : `共打卡 ${totalDays} 天，累计学习 ${Math.round(totalMinutes / 60 * 10) / 10} 小时`}
+              {loading ? "加载中..." : loadError ? "数据加载失败，请刷新" : `共打卡 ${totalDays} 天，累计学习 ${Math.round(totalMinutes / 60 * 10) / 10} 小时`}
             </p>
           </div>
+
+          {/* 加载失败提示 */}
+          {loadError && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '20px', marginBottom: 24, textAlign: 'center', fontSize: 14, color: '#dc2626' }}>
+              数据加载失败，请刷新页面重试
+            </div>
+          )}
 
           {/* 统计卡片 */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 32 }}>

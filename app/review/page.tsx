@@ -56,6 +56,8 @@ export default function ReviewPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [stage, setStage] = useState<Stage>("list");
+  const [error, setError] = useState<string | null>(null);
+  const [nextBusy, setNextBusy] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -68,13 +70,16 @@ export default function ReviewPage() {
 
   const fetchToday = async (t: string) => {
     setListLoading(true);
+    setError(null);
     try {
       const res = await fetch(`${API}/review/today`, {
         headers: { Authorization: `Bearer ${t}` },
       });
       const data = await res.json();
       setItems(data.items || []);
-    } catch {}
+    } catch {
+      setError("网络错误，请刷新重试");
+    }
     setListLoading(false);
   };
 
@@ -98,6 +103,7 @@ export default function ReviewPage() {
       setStage("answering");
     } catch {
       setStage("list");
+      setError("出题失败，请重试");
     }
   };
 
@@ -110,6 +116,9 @@ export default function ReviewPage() {
   };
 
   const handleNextQuestion = () => {
+    if (nextBusy) return;
+    setNextBusy(true);
+    setTimeout(() => setNextBusy(false), 100);
     if (questionIndex < questions.length - 1) {
       setQuestionIndex(q => q + 1);
     } else {
@@ -158,6 +167,13 @@ export default function ReviewPage() {
       <Sidebar userEmail={userEmail} />
       <main className="flex-1 overflow-y-auto" style={{ background: '#f9f9f8' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 32px' }}>
+
+          {/* ── 错误提示 ── */}
+          {error && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#dc2626' }}>
+              {error}
+            </div>
+          )}
 
           {/* ── 列表页 ── */}
           {stage === "list" && (
@@ -266,7 +282,8 @@ export default function ReviewPage() {
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   onClick={handleNextQuestion}
-                  style={{ background: '#111', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 28px', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+                  disabled={nextBusy}
+                  style={{ background: '#111', color: '#fff', border: 'none', borderRadius: 8, padding: '11px 28px', fontSize: 14, fontWeight: 500, cursor: nextBusy ? 'not-allowed' : 'pointer', opacity: nextBusy ? 0.7 : 1 }}
                 >
                   {questionIndex < questions.length - 1 ? "下一题 →" : "查看答案 →"}
                 </button>

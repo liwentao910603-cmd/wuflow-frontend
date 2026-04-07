@@ -7,10 +7,12 @@ export default function CheckinModal({ onClose, onSuccess, token }: { onClose: (
   const [duration, setDuration] = useState(30);
   const [mood, setMood] = useState(3);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (!content.trim()) return;
     setSubmitting(true);
+    setSubmitError(null);
     try {
       await fetch(`${API}/study/log`, {
         method: "POST",
@@ -18,7 +20,9 @@ export default function CheckinModal({ onClose, onSuccess, token }: { onClose: (
         body: JSON.stringify({ content, duration_minutes: duration, mood, note_tags: [] }),
       });
       onSuccess();
-    } catch {} finally { setSubmitting(false); }
+    } catch {
+      setSubmitError("提交失败，请重试");
+    } finally { setSubmitting(false); }
   };
 
   const moods = ["😩","😕","😊","😄","🚀"];
@@ -65,6 +69,12 @@ export default function CheckinModal({ onClose, onSuccess, token }: { onClose: (
             </div>
           </div>
         </div>
+
+        {submitError && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#dc2626' }}>
+            {submitError}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onClose} style={{ flex: 1, padding: '11px', borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', color: '#666', fontSize: 13, cursor: 'pointer' }}>取消</button>

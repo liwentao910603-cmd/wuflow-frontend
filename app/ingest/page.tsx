@@ -105,8 +105,20 @@ export default function IngestPage() {
 
   // ── Fetch notes ───────────────────────────────────────
   const fetchNotesRef = useRef<() => void>(() => {});
+  const pollersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+
+  // 组件卸载时清理所有轮询
+  useEffect(() => {
+    return () => {
+      pollersRef.current.forEach(timer => clearInterval(timer));
+      pollersRef.current.clear();
+    };
+  }, []);
 
   const pollNoteStatus = async (noteId: string) => {
+    // 去重：已在轮询中则跳过
+    if (pollersRef.current.has(noteId)) return;
+
     const timer = setInterval(async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -117,6 +129,7 @@ export default function IngestPage() {
         const data = await res.json();
         if (data.status === 'done') {
           clearInterval(timer);
+          pollersRef.current.delete(noteId);
           setNotes(prev => prev.map(n =>
             n.id === noteId ? { ...n, ...data.note } : n
           ));
@@ -125,7 +138,12 @@ export default function IngestPage() {
         }
       } catch {}
     }, 3000);
-    setTimeout(() => clearInterval(timer), 60000);
+
+    pollersRef.current.set(noteId, timer);
+    setTimeout(() => {
+      clearInterval(timer);
+      pollersRef.current.delete(noteId);
+    }, 60000);
   };
 
   const fetchNotes = useCallback(async () => {
