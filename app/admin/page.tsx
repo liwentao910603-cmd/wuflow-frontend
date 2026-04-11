@@ -231,7 +231,7 @@ export default function AdminPage() {
               <span style={{ fontSize: 18 }}>☁️</span>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.87)" }}>阿里云 ECS 到期</div>
-                <div style={{ fontSize: 12, color: "#92400e", marginTop: 2 }}>到期日期：<strong>请确认到期日期</strong>（请更新此处）</div>
+                <div style={{ fontSize: 12, color: "#92400e", marginTop: 2 }}>到期日期：<strong>2026年7月1日 15:00:00</strong></div>
               </div>
             </div>
 
