@@ -62,7 +62,14 @@ export default function ResetPasswordPage() {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
         setStatus("error");
-        setMessage("重置失败，请重新申请重置链接");
+        let msg = "重置失败，请重新申请重置链接";
+        if (error.message.includes("same password") || error.message.includes("different")) {
+          msg = "新密码不能与原密码相同，请换一个密码";
+        } else if (error.message.includes("weak") || error.message.includes("characters")) {
+          msg = "密码强度不够，请使用至少6位字符";
+        }
+        setMessage(msg);
+        return;
       } else {
         setStatus("success");
         setMessage("密码已重置，即将跳转...");
