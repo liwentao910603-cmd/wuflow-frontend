@@ -28,12 +28,19 @@ export default function ResetPasswordPage() {
       const refreshToken = params.get("refresh_token");
       const type = params.get("type");
 
-      if (type === "recovery" && accessToken && refreshToken) {
-        const { error } = await supabase.auth.setSession({
+      if (type === "recovery" && accessToken) {
+        // refresh_token 可能为空，用空字符串兜底
+        const { error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
-          refresh_token: refreshToken,
+          refresh_token: refreshToken || "",
         });
-        setIsValidToken(error ? false : true);
+        if (!sessionError) {
+          setIsValidToken(true);
+          return;
+        }
+        // setSession 失败时，用 getUser 验证 token 有效性
+        const { error: userError } = await supabase.auth.getUser(accessToken);
+        setIsValidToken(!userError);
       } else {
         setIsValidToken(false);
       }
