@@ -8,6 +8,31 @@ import Sidebar from "@/components/Sidebar";
 const API = process.env.NEXT_PUBLIC_API_URL;
 const supabase = createClient();
 
+interface RadarPoint {
+  tag: string;
+  avg_score: number;
+  count: number;
+}
+
+interface WeakNote {
+  note_id: string;
+  title: string;
+  score: number;
+}
+
+interface WeakSpot {
+  tag: string;
+  avg_score: number;
+  count: number;
+  notes: WeakNote[];
+}
+
+interface BlindSpotsData {
+  has_enough_data: boolean;
+  radar_data: RadarPoint[];
+  weak_spots: WeakSpot[];
+}
+
 interface StudyLog {
   id: string;
   content: string;
@@ -117,6 +142,73 @@ function Heatmap({ data }: { data: Record<string, number> }) {
   );
 }
 
+// 雷达图组件（纯 SVG）
+function RadarChart({ data }: { data: RadarPoint[] }) {
+  const dims = data.slice(0, 8);
+  const N = dims.length;
+  if (N < 3) return <p style={{ fontSize: 13, color: "#a0a0a0", textAlign: "center", padding: "20px 0" }}>数据维度不足，暂无雷达图</p>;
+
+  const cx = 160, cy = 160, R = 110, labelR = 148, layers = 5;
+
+  const getPoint = (r: number, i: number): [number, number] => {
+    const angle = (2 * Math.PI * i / N) - Math.PI / 2;
+    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+  };
+
+  const toPath = (pts: [number, number][]) =>
+    pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ") + " Z";
+
+  const ringPaths = Array.from({ length: layers }, (_, k) =>
+    toPath(dims.map((_, i) => getPoint(R * (k + 1) / layers, i)))
+  );
+
+  const dataPath = toPath(dims.map((d, i) => getPoint(R * Math.min(d.avg_score, 5) / 5, i)));
+
+  return (
+    <svg width="320" height="320" viewBox="0 0 320 320" style={{ display: "block", margin: "0 auto" }}>
+      {/* 同心多边形背景 */}
+      {ringPaths.map((d, k) => (
+        <path key={k} d={d} fill="none" stroke="#e5e7eb" strokeWidth="1" />
+      ))}
+
+      {/* 轴线 */}
+      {dims.map((_, i) => {
+        const [x, y] = getPoint(R, i);
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#e5e7eb" strokeWidth="1" />;
+      })}
+
+      {/* 数据多边形 */}
+      <path d={dataPath} fill="rgba(0,229,160,0.18)" stroke="#00C896" strokeWidth="2" strokeLinejoin="round" />
+
+      {/* 数据顶点 */}
+      {dims.map((d, i) => {
+        const [x, y] = getPoint(R * Math.min(d.avg_score, 5) / 5, i);
+        return <circle key={i} cx={x} cy={y} r="3.5" fill="#00C896" stroke="#fff" strokeWidth="1.5" />;
+      })}
+
+      {/* 刻度数字（沿第一轴） */}
+      {[1, 2, 3, 4, 5].map(v => {
+        const [x, y] = getPoint(R * v / 5, 0);
+        return <text key={v} x={x + 4} y={y + 3} fontSize="9" fill="#c0c0c0">{v}</text>;
+      })}
+
+      {/* 维度标签 */}
+      {dims.map((d, i) => {
+        const angle = (2 * Math.PI * i / N) - Math.PI / 2;
+        const [x, y] = getPoint(labelR, i);
+        const cosA = Math.cos(angle);
+        const anchor = cosA > 0.15 ? "start" : cosA < -0.15 ? "end" : "middle";
+        const label = d.tag.length > 7 ? d.tag.slice(0, 7) + "…" : d.tag;
+        return (
+          <text key={i} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" fontSize="11" fill="#6b6b6b" fontWeight="500">
+            {label}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
 export default function StudyStatsPage() {
   const [userEmail, setUserEmail] = useState("");
   const [stats, setStats] = useState({ week_hours: 0, streak_days: 0, logged_today: false });
@@ -126,6 +218,8 @@ export default function StudyStatsPage() {
   const [loadError, setLoadError] = useState(false);
   const [totalDays, setTotalDays] = useState(0);
   const [totalMinutes, setTotalMinutes] = useState(0);
+  const [blindSpots, setBlindSpots] = useState<BlindSpotsData | null>(null);
+  const [blindSpotsLoading, setBlindSpotsLoading] = useState(true);
 
   const fetchAll = useCallback(async (token: string) => {
     const h = { Authorization: `Bearer ${token}` };
@@ -168,6 +262,19 @@ export default function StudyStatsPage() {
       setLoadError(true);
     }
     setLoading(false);
+
+    // 盲点诊断（独立请求，不阻塞主内容）
+    try {
+      const bsRes = await fetch(`${API}/diagnostics/blind-spots`, { headers: h });
+      if (bsRes.ok) {
+        const bsData = await bsRes.json();
+        setBlindSpots(bsData);
+      }
+    } catch {
+      // 静默失败
+    } finally {
+      setBlindSpotsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -273,6 +380,92 @@ export default function StudyStatsPage() {
               </div>
             )}
           </div>
+
+          {/* ── 知识雷达 ────────────────────────────────── */}
+          <section style={{ marginTop: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#6b6b6b", marginBottom: 16, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+              📊 知识雷达
+            </div>
+
+            {/* 骨架屏 */}
+            {blindSpotsLoading && (
+              <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "40px 28px", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 220, height: 220, borderRadius: "50%", background: "#f1f0ed" }} />
+                <div style={{ width: 160, height: 12, borderRadius: 6, background: "#f1f0ed" }} />
+                <div style={{ width: 120, height: 12, borderRadius: 6, background: "#f1f0ed" }} />
+              </div>
+            )}
+
+            {/* 数据不足提示 */}
+            {!blindSpotsLoading && blindSpots && !blindSpots.has_enough_data && (
+              <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "36px 28px", textAlign: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🌱</div>
+                <div style={{ fontSize: 14, color: "#6b6b6b" }}>复习数据积累中</div>
+                <div style={{ fontSize: 13, color: "#a0a0a0", marginTop: 6 }}>完成 5 次以上复习后查看知识雷达图</div>
+              </div>
+            )}
+
+            {/* 雷达图 + 薄弱点 */}
+            {!blindSpotsLoading && blindSpots?.has_enough_data && (
+              <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "28px", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)" }}>
+
+                {/* 雷达图 */}
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
+                  <RadarChart data={blindSpots.radar_data || []} />
+                </div>
+
+                {/* 分隔线 */}
+                <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)", marginBottom: 24 }} />
+
+                {/* 薄弱点列表 */}
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#6b6b6b", marginBottom: 16, letterSpacing: "0.3px" }}>
+                    需要加强
+                  </div>
+
+                  {!blindSpots.weak_spots || blindSpots.weak_spots.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "16px 0", fontSize: 14, color: "#a0a0a0" }}>
+                      🎉 暂无明显薄弱点，继续保持！
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      {blindSpots.weak_spots.map((ws, i) => (
+                        <div key={i} style={{ padding: "16px", background: "#fafafa", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)" }}>
+                          {/* tag + 分数 + 次数 */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", padding: "2px 10px", borderRadius: 99 }}>
+                              {ws.tag}
+                            </span>
+                            <span style={{ fontSize: 13, color: "#6b6b6b" }}>
+                              ⭐ {ws.avg_score.toFixed(1)} / 5
+                            </span>
+                            <span style={{ fontSize: 12, color: "#a0a0a0" }}>
+                              复习 {ws.count} 次
+                            </span>
+                          </div>
+
+                          {/* 低分笔记列表 */}
+                          {ws.notes && ws.notes.length > 0 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                              {ws.notes.slice(0, 3).map((n, j) => (
+                                <button
+                                  key={j}
+                                  onClick={() => { window.location.href = `/notes/${n.note_id}`; }}
+                                  style={{ textAlign: "left", background: "none", border: "none", padding: "3px 0", cursor: "pointer", fontSize: 13, color: "#4338ca", textDecoration: "underline", textUnderlineOffset: 2, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                >
+                                  {n.title}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
 
         </div>
       </main>
