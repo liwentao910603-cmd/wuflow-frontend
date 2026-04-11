@@ -101,6 +101,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading && notesTotal === 0) {
       Promise.resolve(localStorage.getItem("wuflow_onboarding_done")).then((done) => {
+        console.log("onboarding trigger check:", notesTotal, localStorage.getItem("wuflow_onboarding_done"));
         if (!done) setShowOnboarding(true);
       });
     }
