@@ -7,22 +7,33 @@ import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
 
 export default function ResetPasswordPage() {
-  const [ready, setReady] = useState(false);
+  // null = 等待中，true = token 有效，false = 链接无效
+  const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // Supabase 通过 URL hash 中的 access_token 自动恢复 session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setReady(true);
-      } else {
-        setStatus("error");
-        setMessage("链接无效或已过期，请重新申请重置密码");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "PASSWORD_RECOVERY") {
+          setIsValidToken(true);
+        } else if (event === "SIGNED_IN" && session) {
+          setIsValidToken(true);
+        }
       }
-    });
+    );
+
+    // 5秒后还没收到 PASSWORD_RECOVERY 事件，显示链接无效
+    const timer = setTimeout(() => {
+      setIsValidToken((prev) => (prev === null ? false : prev));
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,11 +89,13 @@ export default function ResetPasswordPage() {
           <p className="text-sm text-gray-400">请输入你的新密码</p>
         </div>
 
-        {/* 链接无效时仅显示错误 */}
-        {!ready && status === "error" ? (
+        {/* 等待 token 验证 */}
+        {isValidToken === null ? (
+          <div className="text-center text-sm text-gray-400">验证链接中...</div>
+        ) : isValidToken === false ? (
           <div className="space-y-4">
             <div className="rounded-lg px-4 py-3 text-sm bg-red-50 border border-red-100 text-red-600">
-              {message}
+              链接无效或已过期，请重新申请重置密码
             </div>
             <div className="text-center text-sm text-gray-400">
               <Link href="/login" className="text-gray-900 hover:underline font-medium">
@@ -90,7 +103,7 @@ export default function ResetPasswordPage() {
               </Link>
             </div>
           </div>
-        ) : ready ? (
+        ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm text-gray-600 mb-1.5">新密码</label>
@@ -138,7 +151,7 @@ export default function ResetPasswordPage() {
               {status === "loading" ? "重置中..." : "确认重置 →"}
             </button>
           </form>
-        ) : null}
+        )}
       </div>
     </div>
   );
