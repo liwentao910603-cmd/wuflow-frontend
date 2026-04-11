@@ -1,12 +1,22 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
 const API = process.env.NEXT_PUBLIC_API_URL;
+
+// ── 新手引导步骤 ────────────────────────────────────────────
+const OB_STEPS = [
+  { id: "ob-s-ingest",  icon: "📥", title: "整理资料",   desc: "从这里开始，粘贴 URL 或上传 PDF，AI 自动生成笔记。" },
+  { id: "ob-s-notes",   icon: "📚", title: "知识库",     desc: "整理后的所有笔记都在这里，随时查阅回顾。" },
+  { id: "ob-s-qa",      icon: "💬", title: "AI 问答",    desc: "基于你的知识库智能回答，不是泛泛的 ChatGPT。" },
+  { id: "ob-s-review",  icon: "🔄", title: "复习提醒",   desc: "科学间隔复习，在你快遗忘时 AI 主动出题。" },
+  { id: "ob-s-stats",   icon: "📊", title: "学习统计",   desc: "追踪你的学习进度，养成持续学习习惯。" },
+];
 
 // ── 意见反馈弹窗 ────────────────────────────────────────────
 const FEEDBACK_TYPES = [
@@ -62,7 +72,6 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
           <>
             <h3 style={{ fontSize: 18, fontWeight: 600, color: "rgba(0,0,0,0.87)", margin: "0 0 24px" }}>💬 意见反馈</h3>
 
-            {/* 类型选择 */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: "#6b6b6b", display: "block", marginBottom: 8 }}>反馈类型</label>
               <div style={{ display: "flex", gap: 8 }}>
@@ -75,7 +84,6 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* 内容 */}
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: "#6b6b6b", display: "block", marginBottom: 8 }}>
                 内容 <span style={{ color: "#dc2626" }}>*</span>
@@ -92,7 +100,6 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* 邮箱 */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontSize: 12, fontWeight: 600, color: "#6b6b6b", display: "block", marginBottom: 8 }}>邮箱（选填）</label>
               <input
@@ -127,6 +134,114 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── 侧边栏引导气泡 ──────────────────────────────────────────
+function SidebarTooltip({ step, sidebarW, onNext, onClose }: {
+  step: number;
+  sidebarW: number;
+  onNext: () => void;
+  onClose: () => void;
+}) {
+  const [top, setTop] = useState<number | null>(null);
+  const current = OB_STEPS[step];
+  const isLast = step === OB_STEPS.length - 1;
+  const TOOLTIP_W = 240;
+
+  useEffect(() => {
+    const calcTop = async () => {
+      const el = document.getElementById(current.id);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const tooltipH = 140;
+      const t = Math.min(Math.max(r.top + r.height / 2 - tooltipH / 2, 10), window.innerHeight - tooltipH - 10);
+      setTop(t);
+    };
+    calcTop();
+  }, [step, current.id, sidebarW]);
+
+  if (top === null) return null;
+
+  return createPortal(
+    <>
+      {/* 半透明遮罩 */}
+      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.28)", zIndex: 1000 }} onClick={onClose} />
+
+      {/* 气泡卡片 */}
+      <div
+        style={{
+          position: "fixed",
+          left: sidebarW + 14,
+          top,
+          width: TOOLTIP_W,
+          zIndex: 1001,
+          background: "#1a1a2e",
+          borderRadius: 10,
+          padding: "16px 18px 14px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2)",
+          fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif",
+          color: "#fff",
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* 左侧箭头 */}
+        <div style={{
+          position: "absolute",
+          left: -8,
+          top: 28,
+          width: 0,
+          height: 0,
+          borderTop: "8px solid transparent",
+          borderBottom: "8px solid transparent",
+          borderRight: "8px solid #1a1a2e",
+        }} />
+
+        {/* 跳过 */}
+        <button
+          onClick={onClose}
+          style={{ position: "absolute", top: 10, right: 12, background: "none", border: "none", fontSize: 11, color: "rgba(255,255,255,0.38)", cursor: "pointer", padding: "2px 4px", lineHeight: 1 }}
+        >
+          跳过
+        </button>
+
+        {/* 内容 */}
+        <div style={{ marginRight: 28, marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 5 }}>
+            {current.icon} {current.title}
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.68)", lineHeight: 1.65 }}>
+            {current.desc}
+          </div>
+        </div>
+
+        {/* 底部：圆点 + 按钮 */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+            {OB_STEPS.map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  width: i === step ? 14 : 5,
+                  height: 5,
+                  borderRadius: 9999,
+                  background: i === step ? "#fff" : "rgba(255,255,255,0.22)",
+                  transition: "width 0.2s, background 0.2s",
+                }}
+              />
+            ))}
+          </div>
+          <button
+            onClick={isLast ? onClose : onNext}
+            style={{ background: "#2383E2", color: "#fff", border: "none", borderRadius: 5, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+          >
+            {isLast ? "开始 →" : "下一步"}
+          </button>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
+}
+
+// ── 主侧边栏组件 ────────────────────────────────────────────
 interface SidebarProps {
   userEmail?: string;
 }
@@ -137,6 +252,29 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // 新手引导
+  const [obStep, setObStep] = useState(0);
+  const [showOb, setShowOb] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      const key = `wuflow_onboarding_done_${session.user.id}`;
+      if (!localStorage.getItem(key)) {
+        setShowOb(true);
+      }
+    });
+  }, []);
+
+  const closeOb = () => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      const key = `wuflow_onboarding_done_${session.user.id}`;
+      localStorage.setItem(key, "1");
+    });
+    setShowOb(false);
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -153,38 +291,45 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const navItems: { href: string; label: string; id?: string; icon: React.ReactNode }[] = [
+  const navItems: { href: string; label: string; obId?: string; icon: React.ReactNode }[] = [
     { href: "/dashboard", label: "主页", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     )},
-    { href: "/ingest", label: "整理资料", icon: (
+    { href: "/ingest", label: "整理资料", obId: "ob-s-ingest", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
     )},
-    { href: "/notes", label: "知识库", icon: (
+    { href: "/notes", label: "知识库", obId: "ob-s-notes", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     )},
     { href: "/concepts", label: "概念库", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
     )},
-    { href: "/qa", label: "AI 问答", id: "ob-sidebar-qa", icon: (
+    { href: "/qa", label: "AI 问答", obId: "ob-s-qa", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     )},
   ];
 
-  const learnItems: { href: string; label: string; disabled?: boolean; icon: React.ReactNode }[] = [
-    { href: "/review", label: "复习提醒", icon: (
+  const learnItems: { href: string; label: string; obId?: string; disabled?: boolean; icon: React.ReactNode }[] = [
+    { href: "/review", label: "复习提醒", obId: "ob-s-review", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     )},
-    { href: "/study-stats", label: "学习统计", icon: (
+    { href: "/study-stats", label: "学习统计", obId: "ob-s-stats", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     )},
   ];
 
   const displayName = userEmail.split("@")[0] || "用户";
+  const sidebarW = collapsed ? 52 : 220;
+  const currentObId = showOb ? OB_STEPS[obStep].id : null;
+
+  const navHighlight = (obId?: string): React.CSSProperties =>
+    currentObId && obId && currentObId === obId
+      ? { boxShadow: "0 0 0 2px #2383E2", borderRadius: 6, position: "relative", zIndex: 1002 }
+      : {};
 
   return (
     <aside
-      style={{ width: collapsed ? 52 : 220, flexShrink: 0, background: '#ffffff', borderRight: '1px solid rgba(0,0,0,0.08)', fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}
+      style={{ width: sidebarW, flexShrink: 0, background: "#ffffff", borderRight: "1px solid rgba(0,0,0,0.08)", fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}
       className="flex flex-col h-screen sticky top-0 transition-all duration-200 overflow-hidden"
     >
       {/* Header */}
@@ -201,7 +346,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
         </button>
         {!collapsed && (
           <div className="flex items-center gap-2 overflow-hidden">
-            <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-medium flex-shrink-0" style={{ background: '#f1f0ed', color: 'rgba(0,0,0,0.87)' }}>悟</div>
+            <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-medium flex-shrink-0" style={{ background: "#f1f0ed", color: "rgba(0,0,0,0.87)" }}>悟</div>
             <span className="text-sm font-medium text-gray-900 whitespace-nowrap">WuFlow</span>
           </div>
         )}
@@ -213,7 +358,8 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           <Link
             key={item.href}
             href={item.href}
-            id={item.id}
+            id={item.obId}
+            style={navHighlight(item.obId)}
             className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 transition-colors whitespace-nowrap ${
               (pathname === item.href || pathname.startsWith(item.href + "/"))
                 ? "bg-white text-gray-900 font-medium"
@@ -225,7 +371,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           </Link>
         ))}
 
-        <div className="h-px my-1.5" style={{ background: 'rgba(0,0,0,0.08)' }} />
+        <div className="h-px my-1.5" style={{ background: "rgba(0,0,0,0.08)" }} />
         {!collapsed && <div className="text-xs text-gray-400 px-2 pb-1 pt-0.5 tracking-wide font-medium">学习</div>}
 
         {learnItems.map((item) =>
@@ -233,16 +379,14 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
             <div
               key={item.label}
               title="即将上线"
-              className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 whitespace-nowrap cursor-not-allowed select-none ${
-                collapsed ? "justify-center px-0" : ""
-              }`}
-              style={{ color: '#d1d5db' }}
+              className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 whitespace-nowrap cursor-not-allowed select-none ${collapsed ? "justify-center px-0" : ""}`}
+              style={{ color: "#d1d5db" }}
             >
               <span className="flex-shrink-0" style={{ opacity: 0.5 }}>{item.icon}</span>
               {!collapsed && (
                 <>
                   <span className="flex-1 overflow-hidden text-ellipsis">{item.label}</span>
-                  <span style={{ fontSize: 10, background: '#f3f4f6', color: '#9ca3af', padding: '1px 6px', borderRadius: 99, flexShrink: 0, fontWeight: 500 }}>即将上线</span>
+                  <span style={{ fontSize: 10, background: "#f3f4f6", color: "#9ca3af", padding: "1px 6px", borderRadius: 99, flexShrink: 0, fontWeight: 500 }}>即将上线</span>
                 </>
               )}
             </div>
@@ -250,6 +394,8 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
             <Link
               key={item.label}
               href={item.href}
+              id={item.obId}
+              style={navHighlight(item.obId)}
               className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 transition-colors whitespace-nowrap ${
                 pathname === item.href
                   ? "bg-white text-gray-900 font-medium"
@@ -264,13 +410,12 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="flex-shrink-0 px-2 py-1.5 relative" style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }} ref={menuRef}>
-        {/* 用户菜单弹窗 */}
+      <div className="flex-shrink-0 px-2 py-1.5 relative" style={{ borderTop: "1px solid rgba(0,0,0,0.08)" }} ref={menuRef}>
         {menuOpen && (
-          <div className="bg-white rounded-xl py-1.5 z-50 w-52" style={{ position: 'fixed', bottom: '60px', left: collapsed ? '60px' : '228px', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)' }}>
-            <div className="px-3 py-2 mb-1" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-              <div className="text-sm font-medium" style={{ color: 'rgba(0,0,0,0.87)' }}>{displayName}</div>
-              <div className="text-xs mt-0.5" style={{ color: '#a0a0a0' }}>{userEmail}</div>
+          <div className="bg-white rounded-xl py-1.5 z-50 w-52" style={{ position: "fixed", bottom: "60px", left: collapsed ? "60px" : "228px", border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)" }}>
+            <div className="px-3 py-2 mb-1" style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+              <div className="text-sm font-medium" style={{ color: "rgba(0,0,0,0.87)" }}>{displayName}</div>
+              <div className="text-xs mt-0.5" style={{ color: "#a0a0a0" }}>{userEmail}</div>
               <span className="inline-block mt-1.5 text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium">免费版</span>
             </div>
             <button className="w-full flex items-center gap-2 px-3 h-9 text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 rounded-md mx-auto transition-colors">
@@ -281,7 +426,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               升级到 Pro ✦
             </button>
-            <div className="h-px my-1" style={{ background: 'rgba(0,0,0,0.06)' }} />
+            <div className="h-px my-1" style={{ background: "rgba(0,0,0,0.06)" }} />
             <button
               onClick={handleSignOut}
               className="w-full flex items-center gap-2 px-3 h-9 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors"
@@ -292,7 +437,6 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           </div>
         )}
 
-        {/* 意见反馈 */}
         <button
           onClick={() => setFeedbackOpen(true)}
           className={`w-full flex items-center gap-2 px-2 h-8 rounded-md text-xs text-gray-400 hover:bg-white hover:text-gray-500 transition-colors mb-1 ${collapsed ? "justify-center px-0" : ""}`}
@@ -302,12 +446,11 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
         </button>
         {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
 
-        {/* 用户行 */}
         <button
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
           className={`w-full flex items-center gap-2 px-2 h-10 rounded-md hover:bg-white transition-colors ${collapsed ? "justify-center px-0" : ""}`}
         >
-          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0" style={{ background: '#f1f0ed', color: 'rgba(0,0,0,0.87)' }}>
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0" style={{ background: "#f1f0ed", color: "rgba(0,0,0,0.87)" }}>
             {displayName.charAt(0)}
           </div>
           {!collapsed && (
@@ -321,6 +464,16 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           )}
         </button>
       </div>
+
+      {/* 侧边栏引导气泡（portal 到 body 外） */}
+      {showOb && (
+        <SidebarTooltip
+          step={obStep}
+          sidebarW={sidebarW}
+          onNext={() => setObStep(s => s + 1)}
+          onClose={closeOb}
+        />
+      )}
     </aside>
   );
 }

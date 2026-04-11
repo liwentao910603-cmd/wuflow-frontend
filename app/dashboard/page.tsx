@@ -6,7 +6,6 @@ import { getCache, setCache } from "@/lib/cache";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 import CheckinModal from "./CheckinModal";
-import OnboardingTooltip from "./OnboardingTooltip";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const supabase = createClient();
@@ -33,8 +32,6 @@ export default function DashboardPage() {
   const [tomorrowReview, setTomorrowReview] = useState<{count: number, items: {notes: {title: string}}[]}>({ count: 0, items: [] });
   const [studyStats, setStudyStats] = useState({ week_hours: 0, streak_days: 0, logged_today: false });
   const [showCheckin, setShowCheckin] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState(0);
 
   const displayName = userEmail.split("@")[0] || "用户";
 
@@ -97,20 +94,6 @@ export default function DashboardPage() {
       fetchData(session.access_token);
     });
   }, [fetchData]);
-
-  useEffect(() => {
-    if (!loading && notesTotal === 0) {
-      Promise.resolve(localStorage.getItem("wuflow_onboarding_done")).then((done) => {
-        console.log("onboarding trigger check:", notesTotal, localStorage.getItem("wuflow_onboarding_done"));
-        if (!done) setShowOnboarding(true);
-      });
-    }
-  }, [loading, notesTotal]);
-
-  const closeOnboarding = () => {
-    localStorage.setItem("wuflow_onboarding_done", "1");
-    setShowOnboarding(false);
-  };
 
   const tagColor: Record<string, string> = {
     url: "bg-blue-50 text-blue-600",
@@ -267,7 +250,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {showOnboarding && <OnboardingTooltip step={onboardingStep} onNext={() => setOnboardingStep(s => s + 1)} onClose={closeOnboarding} />}
     </div>
   );
 }
