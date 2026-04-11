@@ -153,7 +153,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const navItems = [
+  const navItems: { href: string; label: string; id?: string; icon: React.ReactNode }[] = [
     { href: "/dashboard", label: "主页", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     )},
@@ -166,7 +166,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
     { href: "/concepts", label: "概念库", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
     )},
-    { href: "/qa", label: "AI 问答", icon: (
+    { href: "/qa", label: "AI 问答", id: "ob-sidebar-qa", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     )},
   ];
@@ -213,6 +213,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           <Link
             key={item.href}
             href={item.href}
+            id={item.id}
             className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 transition-colors whitespace-nowrap ${
               (pathname === item.href || pathname.startsWith(item.href + "/"))
                 ? "bg-white text-gray-900 font-medium"
