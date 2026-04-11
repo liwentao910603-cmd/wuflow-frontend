@@ -6,6 +6,126 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
+const API = process.env.NEXT_PUBLIC_API_URL;
+
+// ── 意见反馈弹窗 ────────────────────────────────────────────
+const FEEDBACK_TYPES = [
+  { value: "bug",     label: "🐛 Bug反馈" },
+  { value: "feature", label: "✨ 功能建议" },
+  { value: "other",   label: "💬 其他" },
+];
+
+function FeedbackModal({ onClose }: { onClose: () => void }) {
+  const [type, setType] = useState("bug");
+  const [content, setContent] = useState("");
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async () => {
+    if (content.trim().length < 10) { setError("请至少输入10个字"); return; }
+    setSubmitting(true);
+    setError("");
+    try {
+      const res = await fetch(`${API}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, content: content.trim(), email: email.trim() || null }),
+      });
+      if (!res.ok) throw new Error();
+      setSuccess(true);
+      setTimeout(() => onClose(), 1800);
+    } catch {
+      setError("提交失败，请稍后重试");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "#fff", borderRadius: 12, padding: "32px", width: 440, boxShadow: "0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)", fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {success ? (
+          <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ fontSize: 36, marginBottom: 14 }}>🎉</div>
+            <p style={{ fontSize: 16, fontWeight: 600, color: "rgba(0,0,0,0.87)", margin: "0 0 6px" }}>感谢反馈！</p>
+            <p style={{ fontSize: 13, color: "#a0a0a0", margin: 0 }}>我们会认真阅读每一条建议</p>
+          </div>
+        ) : (
+          <>
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: "rgba(0,0,0,0.87)", margin: "0 0 24px" }}>💬 意见反馈</h3>
+
+            {/* 类型选择 */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b6b6b", display: "block", marginBottom: 8 }}>反馈类型</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                {FEEDBACK_TYPES.map(t => (
+                  <button key={t.value} onClick={() => setType(t.value)}
+                    style={{ flex: 1, padding: "8px 4px", borderRadius: 6, border: `1px solid ${type === t.value ? "#111" : "rgba(0,0,0,0.08)"}`, background: type === t.value ? "#111" : "#fff", color: type === t.value ? "#fff" : "#6b6b6b", fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 内容 */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b6b6b", display: "block", marginBottom: 8 }}>
+                内容 <span style={{ color: "#dc2626" }}>*</span>
+              </label>
+              <textarea
+                value={content}
+                onChange={e => { setContent(e.target.value); setError(""); }}
+                placeholder="描述你的问题或建议..."
+                autoFocus
+                style={{ width: "100%", minHeight: 100, border: "1px solid rgba(0,0,0,0.08)", borderRadius: 6, padding: "10px 12px", fontSize: 14, lineHeight: 1.6, resize: "none", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+              <div style={{ fontSize: 11, color: content.length < 10 ? "#a0a0a0" : "#10b981", marginTop: 4 }}>
+                {content.length} 字 · 至少 10 字
+              </div>
+            </div>
+
+            {/* 邮箱 */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#6b6b6b", display: "block", marginBottom: 8 }}>邮箱（选填）</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="留下邮箱方便回复（选填）"
+                style={{ width: "100%", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 6, padding: "10px 12px", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+              />
+            </div>
+
+            {error && (
+              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: "#dc2626" }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={onClose}
+                style={{ flex: 1, padding: "11px", borderRadius: 6, border: "1px solid rgba(0,0,0,0.08)", background: "#fff", color: "#6b6b6b", fontSize: 13, cursor: "pointer" }}>
+                取消
+              </button>
+              <button onClick={handleSubmit} disabled={content.trim().length < 10 || submitting}
+                style={{ flex: 2, padding: "11px", borderRadius: 6, border: "none", background: content.trim().length >= 10 ? "#111" : "rgba(0,0,0,0.08)", color: content.trim().length >= 10 ? "#fff" : "#a0a0a0", fontSize: 13, fontWeight: 500, cursor: content.trim().length >= 10 ? "pointer" : "not-allowed" }}>
+                {submitting ? "提交中..." : "提交反馈"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface SidebarProps {
   userEmail?: string;
@@ -15,6 +135,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = async () => {
@@ -171,10 +292,14 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
         )}
 
         {/* 意见反馈 */}
-        <button className={`w-full flex items-center gap-2 px-2 h-8 rounded-md text-xs text-gray-400 hover:bg-white hover:text-gray-500 transition-colors mb-1 ${collapsed ? "justify-center px-0" : ""}`}>
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className={`w-full flex items-center gap-2 px-2 h-8 rounded-md text-xs text-gray-400 hover:bg-white hover:text-gray-500 transition-colors mb-1 ${collapsed ? "justify-center px-0" : ""}`}
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
           {!collapsed && <span>意见反馈</span>}
         </button>
+        {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
 
         {/* 用户行 */}
         <button
