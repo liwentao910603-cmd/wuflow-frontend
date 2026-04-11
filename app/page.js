@@ -12,8 +12,18 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
+      const search = window.location.search;
+      console.log('Landing hash:', hash);
+      console.log('Landing search:', search);
+
+      // 检查 hash 里有 type=recovery
       if (hash && hash.includes('type=recovery')) {
-        window.location.href = '/reset-password' + hash;
+        window.location.replace('/reset-password' + hash);
+        return;
+      }
+      // 检查 search 里有 error（Supabase 有时把错误放在 query string）
+      if (search && search.includes('error=access_denied')) {
+        window.location.replace('/reset-password' + search + hash);
         return;
       }
     }
