@@ -93,10 +93,12 @@ export default function ConceptDetailPage() {
   const [error, setError] = useState("");
   const [relatedNotes, setRelatedNotes] = useState<RelatedNote[]>([]);
   const [relatedLoading, setRelatedLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const elapsedRef = useRef(0);
+  const tokenRef = useRef("");
 
   const fetchRelatedNotes = async (token: string, ids: string[]) => {
     if (!ids?.length) return;
@@ -154,10 +156,25 @@ export default function ConceptDetailPage() {
       });
   };
 
+  const handleDelete = async () => {
+    if (!confirm(`确定删除概念「${term}」？`)) return;
+    setDeleting(true);
+    try {
+      await fetch(`${API}/concepts/${encodeURIComponent(term)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${tokenRef.current}` },
+      });
+      window.location.href = "/concepts";
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
       setUserEmail(session.user.email ?? null);
+      tokenRef.current = session.access_token;
       fetchConcept(session.access_token);
     });
     return () => {
@@ -175,16 +192,37 @@ export default function ConceptDetailPage() {
       <div className="flex-1 overflow-y-auto bg-white">
         <div className="max-w-3xl mx-auto px-6 py-10">
 
-          {/* 返回按钮 */}
-          <button
-            onClick={() => { window.location.href = "/concepts"; }}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors mb-8"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            返回概念库
-          </button>
+          {/* 顶部操作栏 */}
+          <div className="flex items-center justify-between mb-8">
+            <button
+              onClick={() => { window.location.href = "/concepts"; }}
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              返回概念库
+            </button>
+            {pageStatus === "done" && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-sm text-red-400 hover:text-red-600 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {deleting ? (
+                  <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m2 0V5a1 1 0 011-1h4a1 1 0 011 1v2" />
+                  </svg>
+                )}
+                {deleting ? "删除中..." : "删除此 Wiki"}
+              </button>
+            )}
+          </div>
 
           {/* 初始加载 */}
           {pageStatus === "loading" && (

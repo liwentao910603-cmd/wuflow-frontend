@@ -43,12 +43,15 @@ function StatusBadge({ status }: { status: ConceptSummary["status"] }) {
 export default function ConceptsPage() {
   const [concepts, setConcepts] = useState<ConceptSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [token, setToken] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
       setUserEmail(session.user.email ?? null);
+      setToken(session.access_token);
       try {
         const res = await fetch(`${API}/concepts`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
@@ -65,6 +68,21 @@ export default function ConceptsPage() {
       }
     });
   }, []);
+
+  const handleDelete = async (term: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`确定删除概念「${term}」？`)) return;
+    setDeleting(term);
+    try {
+      await fetch(`${API}/concepts/${encodeURIComponent(term)}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setConcepts((prev) => prev.filter((c) => c.term !== term));
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   return (
     <div
@@ -118,23 +136,47 @@ export default function ConceptsPage() {
           {!loading && concepts.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {concepts.map((c) => (
-                <button
+                <div
                   key={c.term}
-                  onClick={() => { window.location.href = `/concepts/${encodeURIComponent(c.term)}`; }}
-                  disabled={c.status === "error"}
-                  className="text-left border border-gray-100 rounded-xl p-5 hover:border-gray-300 hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group relative border border-gray-100 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all"
                 >
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <StatusBadge status={c.status} />
-                    <span className="text-xs text-gray-300">{formatDate(c.updated_at)}</span>
-                  </div>
-                  <h3 className="text-base font-semibold text-gray-900 mb-2 leading-snug">{c.term}</h3>
-                  {c.summary && (
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      {c.summary.length > 60 ? c.summary.slice(0, 60) + "…" : c.summary}
-                    </p>
-                  )}
-                </button>
+                  {/* 删除按钮 */}
+                  <button
+                    onClick={(e) => handleDelete(c.term, e)}
+                    disabled={deleting === c.term}
+                    title="删除此概念"
+                    className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all disabled:opacity-50"
+                  >
+                    {deleting === c.term ? (
+                      <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m2 0V5a1 1 0 011-1h4a1 1 0 011 1v2" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* 卡片主体（点击跳转） */}
+                  <button
+                    onClick={() => { window.location.href = `/concepts/${encodeURIComponent(c.term)}`; }}
+                    disabled={c.status === "error" || deleting === c.term}
+                    className="w-full text-left p-5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <StatusBadge status={c.status} />
+                      <span className="text-xs text-gray-300">{formatDate(c.updated_at)}</span>
+                    </div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-2 leading-snug pr-5">{c.term}</h3>
+                    {c.summary && (
+                      <p className="text-xs text-gray-400 leading-relaxed">
+                        {c.summary.length > 60 ? c.summary.slice(0, 60) + "…" : c.summary}
+                      </p>
+                    )}
+                  </button>
+                </div>
               ))}
             </div>
           )}
