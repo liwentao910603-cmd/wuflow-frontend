@@ -116,7 +116,8 @@ export default function ConceptDetailPage() {
           const n = (r as PromiseFulfilledResult<{ id: string; title: string }>).value;
           return { id: n.id, title: n.title };
         });
-      setRelatedNotes(notes);
+      const unique = notes.filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i);
+      setRelatedNotes(unique);
     } catch {
       // 静默失败
     } finally {
