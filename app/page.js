@@ -111,10 +111,10 @@ export default function Home() {
               icon: '🔁',
               title: '遗忘曲线复习',
               desc: '在你最容易忘记的时间点，AI 主动出题考你。从被动存储变成主动学习伙伴，真正记住所学内容。',
-              tag: '即将上线',
-              tagColor: '#fff8e1',
-              tagText: '#f57c00',
-              href: null,
+              tag: '已上线',
+              tagColor: '#e8f5e9',
+              tagText: '#2e7d32',
+              href: '/review',
             },
           ].map((f, i) => (
             <div key={i} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '32px 28px', display: 'flex', flexDirection: 'column', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}>

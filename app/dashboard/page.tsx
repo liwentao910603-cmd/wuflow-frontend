@@ -170,6 +170,15 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* 新用户引导横幅 */}
+          {!loading && notesTotal === 0 && (
+            <a href="/ingest" style={{ textDecoration: 'none', display: 'block', marginBottom: 24 }}>
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '16px 22px', fontSize: 14, color: '#15803d', fontWeight: 500, cursor: 'pointer' }}>
+                👋 欢迎使用 WuFlow！先整理一篇文章，开始你的学习之旅 →
+              </div>
+            </a>
+          )}
+
           {/* 快捷入口 */}
           <div style={{ marginBottom: 40 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b6b', letterSpacing: '0.5px', marginBottom: 14, textTransform: 'uppercase' }}>快捷入口</div>
