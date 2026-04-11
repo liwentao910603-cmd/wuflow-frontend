@@ -55,7 +55,6 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   // 复习状态：noteId -> true(已加入) | false(未加入) | 'loading'
   const [reviewStatus, setReviewStatus] = useState<Record<string, boolean | "loading">>({});
@@ -219,10 +218,11 @@ export default function NotesPage() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${tokenRef.current}` },
       });
+      setNotes(prev => prev.filter(n => n.id !== id));
+      setTotal(prev => prev - 1);
+      invalidatePrefix('notes:list');
     } finally {
       setDeleting(null);
-      invalidatePrefix('notes:list');
-      fetchNotes(tokenRef.current);
     }
   };
 
@@ -300,11 +300,11 @@ export default function NotesPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3" onClick={() => setOpenMenu(null)}>
+          <div className="space-y-3">
             {notes.map((note) => (
               <div
                 key={note.id}
-                className="border border-gray-100 rounded-xl overflow-hidden hover:border-gray-200 transition-colors"
+                className="group border border-gray-100 rounded-xl overflow-hidden hover:border-gray-200 transition-colors"
               >
                 <div
                   className="px-5 py-4 cursor-pointer flex items-start justify-between gap-4"
@@ -340,30 +340,24 @@ export default function NotesPage() {
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 shrink-0 mt-0.5">
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu === note.id ? null : note.id); }}
-                        className="text-gray-300 hover:text-gray-500 transition-colors"
-                        style={{ fontSize: 10, letterSpacing: '-3px', padding: '1px 1px', lineHeight: 1 }}
-                      >
-                        ···
-                      </button>
-                      {openMenu === note.id && (
-                        <div
-                          style={{ position: 'absolute', right: 0, top: '100%', zIndex: 10, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)', minWidth: 100, padding: '4px' }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            onClick={(e) => { setOpenMenu(null); handleDelete(note.id, e); }}
-                            disabled={deleting === note.id}
-                            className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                          >
-                            {deleting === note.id ? '删除中...' : '删除'}
-                          </button>
-                        </div>
+                  <div className="flex items-center gap-2 shrink-0 mt-0.5">
+                    <button
+                      onClick={(e) => handleDelete(note.id, e)}
+                      disabled={deleting === note.id}
+                      title="删除笔记"
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all disabled:opacity-50"
+                    >
+                      {deleting === note.id ? (
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2 0H7m2 0V5a1 1 0 011-1h4a1 1 0 011 1v2" />
+                        </svg>
                       )}
-                    </div>
+                    </button>
                     <span className="text-gray-300 text-xs select-none">
                       {expanded === note.id ? "▲" : "▼"}
                     </span>
