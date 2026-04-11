@@ -217,9 +217,12 @@ export default function NoteDetailPage() {
                     <div className="flex flex-col gap-3">
                       {note.concepts_detail.map((c, i) => (
                         <div key={i} className="flex gap-3 items-start">
-                          <span className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-medium shrink-0">
+                          <button
+                            onClick={() => { window.location.href = `/concepts/${encodeURIComponent(c.term)}`; }}
+                            className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-medium shrink-0 hover:bg-indigo-100 transition-colors cursor-pointer"
+                          >
                             {c.term}
-                          </span>
+                          </button>
                           <span className="text-sm text-gray-500 leading-relaxed pt-0.5">{c.definition}</span>
                         </div>
                       ))}

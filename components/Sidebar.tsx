@@ -42,6 +42,9 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
     { href: "/notes", label: "知识库", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     )},
+    { href: "/concepts", label: "概念库", icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    )},
     { href: "/qa", label: "AI 问答", icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     )},
@@ -90,7 +93,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
             key={item.href}
             href={item.href}
             className={`flex items-center gap-2 px-2 h-9 rounded-md text-sm mb-0.5 transition-colors whitespace-nowrap ${
-              pathname === item.href
+              (pathname === item.href || pathname.startsWith(item.href + "/"))
                 ? "bg-white text-gray-900 font-medium"
                 : "text-gray-500 hover:bg-white hover:text-gray-900"
             } ${collapsed ? "justify-center px-0" : ""}`}
