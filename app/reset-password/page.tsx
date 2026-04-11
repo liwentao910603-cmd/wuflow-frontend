@@ -15,8 +15,12 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    // 先手动触发 Supabase 解析 URL hash 里的 token
+    supabase.auth.getSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth event:", event, session); // 调试用
         if (event === "PASSWORD_RECOVERY") {
           setIsValidToken(true);
         } else if (event === "SIGNED_IN" && session) {
