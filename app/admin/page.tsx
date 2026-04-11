@@ -11,7 +11,7 @@ interface AdminStats {
   total_notes: number;
   active_users_7d: number;
   retention_7d: number;
-  total_feedback: number;
+  total_feedbacks: number;
 }
 
 interface Feedback {
@@ -219,7 +219,7 @@ export default function AdminPage() {
             value={stats ? `${stats.retention_7d.toFixed(1)}%` : "—"}
             large
           />
-          <StatCard icon="💬" label="总反馈数" value={stats?.total_feedback ?? "—"} />
+          <StatCard icon="💬" label="总反馈数" value={stats?.total_feedbacks ?? "—"} />
         </div>
 
         {/* 运营预警 */}
