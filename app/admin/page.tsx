@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
 const SESSION_KEY = "wf_admin_pw";
@@ -60,18 +60,22 @@ export default function AdminPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 从 sessionStorage 恢复验证状态
+  // 从 sessionStorage 恢复验证状态 + 启动 30s 自动刷新
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (saved) {
       setStoredPw(saved);
       setAuthed(true);
       fetchData(saved);
+      intervalRef.current = setInterval(() => fetchData(saved), 30000);
     }
-  }, []);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [fetchData]);
 
-  const fetchData = async (pw: string) => {
+  const fetchData = useCallback(async (pw: string) => {
     setDataLoading(true);
     setDataError("");
     const headers = { "X-Admin-Password": pw };
@@ -88,12 +92,13 @@ export default function AdminPage() {
         const list: Feedback[] = Array.isArray(fbData) ? fbData : (fbData.feedbacks || []);
         setFeedbacks(list);
       }
+      setLastUpdated(new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
     } catch {
       setDataError("数据加载失败，请刷新重试");
     } finally {
       setDataLoading(false);
     }
-  };
+  }, []);
 
   const handleAuth = async () => {
     if (!password.trim()) return;
@@ -112,6 +117,8 @@ export default function AdminPage() {
       setStoredPw(password);
       setStats(data);
       setAuthed(true);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => fetchData(password), 30000);
       // 单独拉反馈
       const fbRes = await fetch(`${API}/admin/feedback`, {
         headers: { "X-Admin-Password": password },
@@ -129,10 +136,12 @@ export default function AdminPage() {
   };
 
   const handleLogout = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
     sessionStorage.removeItem(SESSION_KEY);
     setAuthed(false);
     setStats(null);
     setFeedbacks([]);
+    setLastUpdated("");
     setPassword("");
   };
 
@@ -183,7 +192,10 @@ export default function AdminPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(0,0,0,0.87)", margin: "0 0 2px" }}>WuFlow 运营后台</h1>
-            <p style={{ fontSize: 13, color: "#a0a0a0", margin: 0 }}>数据实时从后端读取</p>
+            <p style={{ fontSize: 13, color: "#a0a0a0", margin: 0 }}>
+              每 30 秒自动刷新
+              {lastUpdated && <span style={{ marginLeft: 8, color: "#10b981" }}>· 最后更新 {lastUpdated}</span>}
+            </p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={() => fetchData(storedPw)} disabled={dataLoading}
@@ -257,6 +269,32 @@ export default function AdminPage() {
                   <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" style={{ color: "#6366f1" }}>
                     前往 Dashboard →
                   </a>
+                </div>
+              </div>
+            </div>
+
+            {/* 域名到期 */}
+            {[
+              { domain: "wuflow.cn",     note: "主域名，请登录阿里云控制台确认到期日期" },
+              { domain: "wuflow.top",    note: "备用域名，请登录阿里云控制台确认到期日期" },
+              { domain: "api.wuflow.cn", note: "与 ECS 绑定，到期时间同 ECS（2026年7月1日）" },
+            ].map(({ domain, note }) => (
+              <div key={domain} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}>
+                <span style={{ fontSize: 18 }}>🌐</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.87)" }}>域名：{domain}</div>
+                  <div style={{ fontSize: 12, color: "#92400e", marginTop: 2 }}>{note}</div>
+                </div>
+              </div>
+            ))}
+
+            {/* Vercel */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+              <span style={{ fontSize: 18 }}>▲</span>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.87)" }}>Vercel 免费计划</div>
+                <div style={{ fontSize: 12, color: "#166534", marginTop: 2 }}>
+                  每月 100GB 带宽，目前用量极低，无需付费。关注时机：月活 &gt;1000 用户后检查用量。
                 </div>
               </div>
             </div>
