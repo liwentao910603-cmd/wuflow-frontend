@@ -32,6 +32,8 @@ export default function DashboardPage() {
   const [tomorrowReview, setTomorrowReview] = useState<{count: number, items: {notes: {title: string}}[]}>({ count: 0, items: [] });
   const [studyStats, setStudyStats] = useState({ week_hours: 0, streak_days: 0, logged_today: false });
   const [showCheckin, setShowCheckin] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
 
   const displayName = userEmail.split("@")[0] || "用户";
 
@@ -94,6 +96,19 @@ export default function DashboardPage() {
       fetchData(session.access_token);
     });
   }, [fetchData]);
+
+  useEffect(() => {
+    if (!loading && notesTotal === 0) {
+      Promise.resolve(localStorage.getItem("wuflow_onboarding_done")).then((done) => {
+        if (!done) setShowOnboarding(true);
+      });
+    }
+  }, [loading, notesTotal]);
+
+  const closeOnboarding = () => {
+    localStorage.setItem("wuflow_onboarding_done", "1");
+    setShowOnboarding(false);
+  };
 
   const tagColor: Record<string, string> = {
     url: "bg-blue-50 text-blue-600",
@@ -248,6 +263,60 @@ export default function DashboardPage() {
           onSuccess={() => { setShowCheckin(false); fetchData(token); }}
         />
       )}
+
+      {showOnboarding && <OnboardingModal step={onboardingStep} onNext={() => setOnboardingStep(s => s + 1)} onClose={closeOnboarding} />}
+    </div>
+  );
+}
+
+const ONBOARDING_STEPS = [
+  { icon: '📥', title: '整理资料', desc: '粘贴文章链接或上传 PDF，AI 自动提取知识点，生成结构化笔记。' },
+  { icon: '📚', title: '知识库', desc: '查看和管理你整理的所有笔记，随时回顾已学内容。' },
+  { icon: '💬', title: 'AI 问答', desc: '基于你自己的笔记，随时向 AI 提问，答案 100% 来自你的知识库。' },
+  { icon: '🔄', title: '复习提醒', desc: '在你快遗忘时，AI 主动出题帮你巩固，真正记住所学。' },
+  { icon: '🧠', title: '概念库', desc: '点击笔记中的概念标签，自动生成 Wiki 式解释，深化理解。' },
+];
+
+function OnboardingModal({ step, onNext, onClose }: { step: number; onNext: () => void; onClose: () => void }) {
+  const current = ONBOARDING_STEPS[step];
+  const isLast = step === ONBOARDING_STEPS.length - 1;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 16, padding: '40px 36px', width: 400, maxWidth: '90vw', position: 'relative', boxShadow: '0 24px 64px rgba(0,0,0,0.2)', fontFamily: "'Inter','Noto Sans SC','PingFang SC',sans-serif" }}>
+
+        {/* 跳过按钮 */}
+        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', fontSize: 13, color: '#a0a0a0', cursor: 'pointer', padding: '4px 8px' }}>
+          跳过
+        </button>
+
+        {/* 步骤指示 */}
+        <div style={{ fontSize: 12, color: '#a0a0a0', marginBottom: 28, fontWeight: 500 }}>
+          {step + 1} / {ONBOARDING_STEPS.length}
+        </div>
+
+        {/* 步骤进度条 */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 36 }}>
+          {ONBOARDING_STEPS.map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 3, borderRadius: 9999, background: i <= step ? '#111' : '#e5e7eb', transition: 'background .2s' }} />
+          ))}
+        </div>
+
+        {/* 内容 */}
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <div style={{ fontSize: 52, marginBottom: 20 }}>{current.icon}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'rgba(0,0,0,0.87)', marginBottom: 12, letterSpacing: '-0.3px' }}>{current.title}</div>
+          <div style={{ fontSize: 14, color: '#6b6b6b', lineHeight: 1.7 }}>{current.desc}</div>
+        </div>
+
+        {/* 按钮 */}
+        <button
+          onClick={isLast ? onClose : onNext}
+          style={{ width: '100%', background: '#111', color: '#fff', border: 'none', borderRadius: 8, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+        >
+          {isLast ? '开始使用 →' : '下一步'}
+        </button>
+      </div>
     </div>
   );
 }

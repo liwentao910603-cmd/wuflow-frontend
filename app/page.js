@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
@@ -37,7 +38,10 @@ export default function Home() {
 
       {/* 导航 */}
       <nav style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', padding: '0 40px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(8px)', zIndex: 100 }}>
-        <span style={{ fontSize: 16, fontWeight: 600, color: 'rgba(0,0,0,0.87)', letterSpacing: '-0.3px' }}>悟流 WuFlow</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Image src="/android-chrome-192x192.png" width={28} height={28} style={{ borderRadius: 6 }} alt="WuFlow" />
+            <span style={{ fontWeight: 700, fontSize: 18, color: 'rgba(0,0,0,0.87)', letterSpacing: '-0.3px' }}>悟流 WuFlow</span>
+          </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginRight: 16 }}>
             <a href="#features" style={{ fontSize: 14, color: '#6b6b6b', textDecoration: 'none', padding: '8px 12px' }}>功能</a>
