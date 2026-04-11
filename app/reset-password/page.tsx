@@ -15,29 +15,31 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // 先手动触发 Supabase 解析 URL hash 里的 token
-    supabase.auth.getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth event:", event, session); // 调试用
-        if (event === "PASSWORD_RECOVERY") {
-          setIsValidToken(true);
-        } else if (event === "SIGNED_IN" && session) {
-          setIsValidToken(true);
-        }
+    // 手动从 URL hash 解析 access_token 和 refresh_token
+    const applyToken = async () => {
+      const hash = window.location.hash;
+      if (!hash) {
+        setIsValidToken(false);
+        return;
       }
-    );
 
-    // 5秒后还没收到 PASSWORD_RECOVERY 事件，显示链接无效
-    const timer = setTimeout(() => {
-      setIsValidToken((prev) => (prev === null ? false : prev));
-    }, 5000);
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      const type = params.get("type");
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timer);
+      if (type === "recovery" && accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        setIsValidToken(error ? false : true);
+      } else {
+        setIsValidToken(false);
+      }
     };
+
+    applyToken();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
