@@ -53,15 +53,9 @@ export default function NotesPage() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-
-  // 复习状态：noteId -> true(已加入) | false(未加入) | 'loading'
-  const [reviewStatus, setReviewStatus] = useState<Record<string, boolean | "loading">>({});
-  const [reviewLoading, setReviewLoading] = useState<string | null>(null);
-
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+
 
   const tokenRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
@@ -71,17 +65,11 @@ export default function NotesPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
       setUserEmail(session.user.email ?? null);
-      setAccessToken(session.access_token);
       tokenRef.current = session.access_token;
       fetchNotes(session.access_token);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  };
 
   const fetchNotes = useCallback(async (t: string) => {
     const cacheKey = `notes:list:${page}:${filter}`;
@@ -152,62 +140,6 @@ export default function NotesPage() {
   useEffect(() => {
     if (tokenRef.current) fetchNotes(tokenRef.current);
   }, [page, filter]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 展开笔记时拉取复习状态
-  const fetchReviewStatus = useCallback(async (noteId: string) => {
-    if (reviewStatus[noteId] !== undefined) return;
-    setReviewStatus(prev => ({ ...prev, [noteId]: "loading" }));
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      const res = await fetch(`${API}/review/status/${noteId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await res.json();
-      setReviewStatus(prev => ({ ...prev, [noteId]: data.in_review ?? false }));
-    } catch {
-      setReviewStatus(prev => ({ ...prev, [noteId]: false }));
-    }
-  }, [reviewStatus]);
-
-  const handleExpand = (noteId: string) => {
-    const next = expanded === noteId ? null : noteId;
-    setExpanded(next);
-    if (next) fetchReviewStatus(noteId);
-  };
-
-  // 加入/取消复习
-  const toggleReview = async (noteId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setReviewLoading(noteId);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      const inReview = reviewStatus[noteId] === true;
-
-      if (inReview) {
-        await fetch(`${API}/review/remove/${noteId}`, {
-          method: "DELETE",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        setReviewStatus(prev => ({ ...prev, [noteId]: false }));
-      } else {
-        await fetch(`${API}/review/add`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ note_id: noteId }),
-        });
-        setReviewStatus(prev => ({ ...prev, [noteId]: true }));
-      }
-    } catch {
-      // 失败静默处理
-    } finally {
-      setReviewLoading(null);
-    }
-  };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -308,18 +240,12 @@ export default function NotesPage() {
               >
                 <div
                   className="px-5 py-4 cursor-pointer flex items-start justify-between gap-4"
-                  onClick={() => handleExpand(note.id)}
+                  onClick={() => { window.location.href = `/notes/${note.id}`; }}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
                       <SourceBadge type={note.source_type} />
                       <span className="text-xs text-gray-300">{formatDate(note.created_at)}</span>
-                      {/* 已加入复习的 badge */}
-                      {reviewStatus[note.id] === true && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-400 font-medium">
-                          📚 复习中
-                        </span>
-                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-medium text-gray-900 leading-snug">{note.title}</h3>
@@ -334,11 +260,9 @@ export default function NotesPage() {
                         </span>
                       )}
                     </div>
-                    {expanded !== note.id && (
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
-                        {note.summary}
-                      </p>
-                    )}
+                    <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                      {note.summary}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 mt-0.5">
                     <button
@@ -358,114 +282,11 @@ export default function NotesPage() {
                         </svg>
                       )}
                     </button>
-                    <span className="text-gray-300 text-xs select-none">
-                      {expanded === note.id ? "▲" : "▼"}
-                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-gray-200 group-hover:text-gray-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
                 </div>
-
-                {expanded === note.id && (
-                  <div className="px-5 pb-5 border-t border-gray-50 pt-4 space-y-4">
-                    <div>
-                      <p className="text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wider">📝 摘要</p>
-                      <p className="text-sm text-gray-600 leading-relaxed">{note.summary}</p>
-                    </div>
-
-                    {(note.concepts_detail?.length > 0 || note.concepts?.length > 0) && (
-                      <div>
-                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">💡 核心概念</p>
-                        {note.concepts_detail?.length > 0 ? (
-                          <div className="flex flex-col gap-2">
-                            {note.concepts_detail.map((c, i) => (
-                              <div key={i} className="flex gap-2 items-start">
-                                <span className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-medium shrink-0">{c.term}</span>
-                                <span className="text-xs text-gray-500 leading-relaxed pt-0.5">{c.definition}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {note.concepts.map((c, i) => (
-                              <span key={i} className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">{c}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {note.key_points?.length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">✅ 核心要点</p>
-                        <ul className="space-y-1.5">
-                          {note.key_points.map((p, i) => (
-                            <li key={i} className="text-sm text-gray-600 flex gap-2">
-                              <span className="text-gray-300 shrink-0">·</span>{p}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {note.action_items?.length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">🚀 行动建议</p>
-                        <ul className="space-y-1.5">
-                          {note.action_items.map((a, i) => (
-                            <li key={i} className="text-sm text-gray-600 flex gap-2">
-                              <span className="text-gray-300 shrink-0">{i + 1}.</span>{a}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                      <div className="flex flex-wrap gap-1.5">
-                        {note.tags?.map((tag, i) => (
-                          <span key={i} className="text-xs text-gray-300">#{tag}</span>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {/* 加入复习按钮 */}
-                        <button
-                          onClick={(e) => toggleReview(note.id, e)}
-                          disabled={reviewLoading === note.id || reviewStatus[note.id] === "loading"}
-                          className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
-                            reviewStatus[note.id] === true
-                              ? "border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-red-50 hover:border-red-200 hover:text-red-400"
-                              : "border-gray-200 text-gray-400 hover:border-indigo-200 hover:text-indigo-500 hover:bg-indigo-50"
-                          } disabled:opacity-50`}
-                        >
-                          {reviewLoading === note.id || reviewStatus[note.id] === "loading"
-                            ? "..."
-                            : reviewStatus[note.id] === true
-                            ? "✓ 复习中（点击取消）"
-                            : "📚 加入复习"}
-                        </button>
-
-                        {note.source_url && !note.source_url.startsWith("text://") && (
-                          note.source_url.startsWith("pdf://") ? (
-                            <span className="text-xs text-gray-400">
-                              📄 {note.source_url.replace("pdf://", "")}
-                            </span>
-                          ) : (
-                            <a
-                              href={note.source_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-gray-400 hover:text-gray-700 underline transition-colors"
-                            >
-                              查看原文 →
-                            </a>
-                          )
-                        )}
-                        <Link href="/qa" className="text-xs text-gray-500 hover:text-gray-900 transition-colors">
-                          💬 去问答
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
