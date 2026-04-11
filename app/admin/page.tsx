@@ -63,18 +63,6 @@ export default function AdminPage() {
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // 从 sessionStorage 恢复验证状态 + 启动 30s 自动刷新
-  useEffect(() => {
-    const saved = sessionStorage.getItem(SESSION_KEY);
-    if (saved) {
-      setStoredPw(saved);
-      setAuthed(true);
-      fetchData(saved);
-      intervalRef.current = setInterval(() => fetchData(saved), 30000);
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [fetchData]);
-
   const fetchData = useCallback(async (pw: string) => {
     setDataLoading(true);
     setDataError("");
@@ -99,6 +87,18 @@ export default function AdminPage() {
       setDataLoading(false);
     }
   }, []);
+
+  // 从 sessionStorage 恢复验证状态 + 启动 30s 自动刷新
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved) {
+      setStoredPw(saved);
+      setAuthed(true);
+      fetchData(saved);
+      intervalRef.current = setInterval(() => fetchData(saved), 30000);
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [fetchData]);
 
   const handleAuth = async () => {
     if (!password.trim()) return;
@@ -275,8 +275,8 @@ export default function AdminPage() {
 
             {/* 域名到期 */}
             {[
-              { domain: "wuflow.cn",     note: "主域名，请登录阿里云控制台确认到期日期" },
-              { domain: "wuflow.top",    note: "备用域名，请登录阿里云控制台确认到期日期" },
+              { domain: "wuflow.cn",     note: "主域名，到期日期：2027年3月21日" },
+              { domain: "wuflow.top",    note: "备用域名，到期日期：2027年3月21日" },
               { domain: "api.wuflow.cn", note: "与 ECS 绑定，到期时间同 ECS（2026年7月1日）" },
             ].map(({ domain, note }) => (
               <div key={domain} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}>
