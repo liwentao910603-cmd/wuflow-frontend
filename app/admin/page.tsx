@@ -292,8 +292,10 @@ export default function AdminPage() {
                             {t.label}
                           </span>
                         </td>
-                        <td style={{ padding: "12px 12px", color: "rgba(0,0,0,0.87)", maxWidth: 360 }}>
-                          <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fb.content}</div>
+                        <td style={{ padding: "12px 12px", color: "rgba(0,0,0,0.87)", maxWidth: 500 }}>
+                          <div title={fb.content} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "help" }}>
+                            {fb.content.length > 100 ? fb.content.slice(0, 100) + "…" : fb.content}
+                          </div>
                         </td>
                         <td style={{ padding: "12px 12px", color: "#6b6b6b" }}>{fb.email || "—"}</td>
                       </tr>
