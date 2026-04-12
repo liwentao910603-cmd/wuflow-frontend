@@ -15,21 +15,10 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    // 兼容旧格式：监听 onAuthStateChange PASSWORD_RECOVERY 事件
-    // 新版 PKCE flow 不会触发此事件，但 implicit flow（hash token）会
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        if (timer) clearTimeout(timer);
-        setIsValidToken(true);
-      }
-    });
-
     const init = async () => {
       const searchParams = new URLSearchParams(window.location.search);
 
-      // 1. 检查 query params 是否有 error
+      // 检查是否有 error
       const urlError = searchParams.get("error_description") || searchParams.get("error");
       if (urlError) {
         setIsValidToken(false);
@@ -37,51 +26,30 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // 2. PKCE flow：URL 带有 ?code= 参数，交换成 session
-      const code = searchParams.get("code");
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          setIsValidToken(false);
-          setMessage("链接已过期或无效，请重新申请重置密码");
-        } else {
-          setIsValidToken(true);
-        }
+      // 读取 ?token_hash= 和 ?type=
+      const tokenHash = searchParams.get("token_hash");
+      const type = searchParams.get("type");
+
+      if (!tokenHash || type !== "recovery") {
+        setIsValidToken(false);
+        setMessage("链接无效，请重新申请重置密码");
         return;
       }
 
-      // 3. 兜底：手动解析 hash（implicit flow，旧版 Supabase 默认格式）
-      const hash = window.location.hash;
-      if (hash) {
-        const params = new URLSearchParams(hash.substring(1));
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
-        const type = params.get("type");
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: "recovery",
+      });
 
-        if (type === "recovery" && accessToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || "",
-          });
-          if (error) {
-            setIsValidToken((prev) => (prev === true ? true : false));
-          }
-          // 成功时 setSession 会触发 onAuthStateChange PASSWORD_RECOVERY，由监听器设置 true
-        } else {
-          timer = setTimeout(() => setIsValidToken((prev) => (prev === true ? true : false)), 3000);
-        }
+      if (error) {
+        setIsValidToken(false);
+        setMessage("链接已过期或无效，请重新申请重置密码");
       } else {
-        // 无 code、无 hash、无 error，等待 onAuthStateChange 3 秒超时后降级
-        timer = setTimeout(() => setIsValidToken((prev) => (prev === true ? true : false)), 3000);
+        setIsValidToken(true);
       }
     };
 
     init();
-
-    return () => {
-      if (timer) clearTimeout(timer);
-      subscription.unsubscribe();
-    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
