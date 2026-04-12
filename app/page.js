@@ -59,23 +59,70 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section style={{ maxWidth: 760, margin: '0 auto', padding: '100px 40px 80px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', background: '#f7f6f3', borderRadius: 9999, padding: '4px 14px', fontSize: 12, color: '#6b6b6b', marginBottom: 28, fontWeight: 500 }}>
-          🎓 专为自学者打造的 AI 学习工具
+      <section style={{ maxWidth: 1100, margin: '0 auto', padding: '80px 40px', display: 'flex', alignItems: 'center', gap: 60 }}>
+        {/* 左侧文字 */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'inline-block', background: '#f7f6f3', borderRadius: 9999, padding: '4px 14px', fontSize: 12, color: '#6b6b6b', marginBottom: 28, fontWeight: 500 }}>
+            🎓 读文章 · 问AI · 不再遗忘
+          </div>
+          <h1 style={{ fontSize: 54, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-2px', color: 'rgba(0,0,0,0.87)', margin: '0 0 24px' }}>
+            让知识真正<br />流动起来
+          </h1>
+          <p style={{ fontSize: 16, color: '#6b6b6b', lineHeight: 2, margin: '0 0 40px' }}>
+            粘贴一篇文章&nbsp;
+            <span style={{ color: '#2383E2', fontWeight: 500 }}>→</span>
+            &nbsp;AI 30秒生成结构化笔记&nbsp;
+            <span style={{ color: '#2383E2', fontWeight: 500 }}>→</span>
+            &nbsp;随时问答&nbsp;
+            <span style={{ color: '#2383E2', fontWeight: 500 }}>→</span>
+            &nbsp;智能提醒复习
+          </p>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <a href="/login" style={{ background: '#111', color: '#fff', padding: '13px 28px', borderRadius: 6, fontSize: 15, fontWeight: 600, textDecoration: 'none', letterSpacing: '-0.2px' }}>
+              免费开始使用 →
+            </a>
+            <a href="#features" style={{ color: '#6b6b6b', fontSize: 14, textDecoration: 'none', padding: '13px 20px' }}>
+              了解更多 ↓
+            </a>
+          </div>
         </div>
-        <h1 style={{ fontSize: 62, fontWeight: 700, lineHeight: 1.1, letterSpacing: '-2px', color: 'rgba(0,0,0,0.87)', margin: '0 0 24px' }}>
-          让知识真正<br />流动起来
-        </h1>
-        <p style={{ fontSize: 18, color: '#6b6b6b', lineHeight: 1.7, margin: '0 0 40px', maxWidth: 520, marginLeft: 'auto', marginRight: 'auto' }}>
-          整理资料、问答知识库、追踪学习进度。<br />不只是存储，而是真正学会。
-        </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center' }}>
-          <a href="/login" style={{ background: '#111', color: '#fff', padding: '13px 28px', borderRadius: 6, fontSize: 15, fontWeight: 600, textDecoration: 'none', letterSpacing: '-0.2px' }}>
-            免费开始使用 →
-          </a>
-          <a href="#features" style={{ color: '#6b6b6b', fontSize: 14, textDecoration: 'none', padding: '13px 20px' }}>
-            了解更多 ↓
-          </a>
+
+        {/* 右侧产品 Mock 卡片 */}
+        <div style={{ flexShrink: 0, width: 340 }}>
+          <div style={{ background: '#1a1a1a', borderRadius: 16, padding: '22px', boxShadow: '0 24px 64px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.08)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            {/* 顶栏 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 18 }}>
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#ff5f57' }} />
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#ffbd2e' }} />
+              <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#28c840' }} />
+              <span style={{ marginLeft: 'auto', fontSize: 10, color: '#555', background: '#252525', padding: '2px 8px', borderRadius: 9999, letterSpacing: '.3px' }}>AI 笔记</span>
+            </div>
+            {/* 笔记标题 */}
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: '#f0f0f0', margin: '0 0 8px', lineHeight: 1.4 }}>理解 Transformer 架构</h3>
+            {/* 摘要 */}
+            <p style={{ fontSize: 12, color: '#777', lineHeight: 1.75, margin: '0 0 14px' }}>
+              Transformer 通过自注意力机制并行处理序列数据，彻底取代了 RNN 的顺序计算瓶颈，成为现代大模型的基础...
+            </p>
+            {/* 核心概念 */}
+            <div style={{ background: '#232323', borderRadius: 8, padding: '10px 12px', marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: '#4a4a4a', marginBottom: 8, fontWeight: 600, letterSpacing: '.6px', textTransform: 'uppercase' }}>核心概念</div>
+              {['自注意力机制（Self-Attention）', 'Multi-Head Attention', '位置编码（Positional Encoding）'].map((point, i) => (
+                <div key={i} style={{ fontSize: 12, color: '#999', padding: '3px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#2383E2', fontSize: 9, flexShrink: 0 }}>▸</span>{point}
+                </div>
+              ))}
+            </div>
+            {/* 标签 */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+              {['#机器学习', '#神经网络', '#NLP'].map((tag, i) => (
+                <span key={i} style={{ fontSize: 11, color: '#2383E2', background: 'rgba(35,131,226,0.13)', padding: '3px 8px', borderRadius: 9999 }}>{tag}</span>
+              ))}
+            </div>
+            {/* 按钮 */}
+            <div style={{ background: '#2383E2', borderRadius: 8, padding: '9px', textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
+              加入复习计划 →
+            </div>
+          </div>
         </div>
       </section>
 
