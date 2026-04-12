@@ -188,11 +188,11 @@ export default function DashboardPage() {
               {/* 主 CTA：整理新资料 */}
               <Link id="ob-ingest" href="/ingest" style={{ textDecoration: 'none' }}>
                 <div
-                  style={{ background: '#0D1117', borderRadius: 12, padding: '26px 24px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', height: '100%', boxSizing: 'border-box' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 28px rgba(0,0,0,0.22)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.14)'; }}
+                  style={{ background: 'linear-gradient(135deg, #052e16 0%, #14532d 100%)', borderRadius: 12, padding: '26px 24px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 4px 16px rgba(5,46,22,0.3)', height: '100%', boxSizing: 'border-box' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 28px rgba(5,46,22,0.4)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(5,46,22,0.3)'; }}
                 >
-                  <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(0,229,160,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 18 }}>📥</div>
+                  <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 18 }}>📥</div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                     <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>整理新资料</span>
                     <span style={{ color: '#00E5A0', fontSize: 18, lineHeight: 1 }}>→</span>
@@ -208,7 +208,7 @@ export default function DashboardPage() {
               {/* AI 问答 */}
               <Link href="/qa" style={{ textDecoration: 'none' }}>
                 <div
-                  style={{ background: '#fff', borderTop: '1px solid rgba(0,0,0,0.08)', borderRight: '1px solid rgba(0,0,0,0.08)', borderBottom: '1px solid rgba(0,0,0,0.08)', borderLeft: '3px solid #3B82F6', borderRadius: 10, padding: '22px 20px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}
+                  style={{ background: '#f0f7ff', borderTop: '1px solid rgba(59,130,246,0.15)', borderRight: '1px solid rgba(59,130,246,0.15)', borderBottom: '1px solid rgba(59,130,246,0.15)', borderLeft: '3px solid #3B82F6', borderRadius: 10, padding: '22px 20px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(59,130,246,0.12)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)'; }}
                 >
@@ -224,7 +224,7 @@ export default function DashboardPage() {
               {/* 浏览知识库 */}
               <Link id="ob-notes" href="/notes" style={{ textDecoration: 'none' }}>
                 <div
-                  style={{ background: '#fff', borderTop: '1px solid rgba(0,0,0,0.08)', borderRight: '1px solid rgba(0,0,0,0.08)', borderBottom: '1px solid rgba(0,0,0,0.08)', borderLeft: '3px solid #8B5CF6', borderRadius: 10, padding: '22px 20px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}
+                  style={{ background: '#f5f3ff', borderTop: '1px solid rgba(139,92,246,0.15)', borderRight: '1px solid rgba(139,92,246,0.15)', borderBottom: '1px solid rgba(139,92,246,0.15)', borderLeft: '3px solid #8B5CF6', borderRadius: 10, padding: '22px 20px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(139,92,246,0.12)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)'; }}
                 >
