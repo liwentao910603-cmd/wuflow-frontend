@@ -15,38 +15,60 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // 手动从 URL hash 解析 access_token 和 refresh_token
-    const applyToken = async () => {
-      const hash = window.location.hash;
-      if (!hash) {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    // 2. 监听 onAuthStateChange，等待 PASSWORD_RECOVERY 事件
+    //    Supabase JS SDK 会自动解析 URL hash 并触发该事件
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        if (timer) clearTimeout(timer);
+        setIsValidToken(true);
+      }
+    });
+
+    const init = async () => {
+      // 1. 先检查 query params 是否有 error（Supabase 在链接过期/无效时会附加）
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlError = searchParams.get("error_description") || searchParams.get("error");
+      if (urlError) {
         setIsValidToken(false);
+        setMessage(decodeURIComponent(urlError));
         return;
       }
 
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get("access_token");
-      const refreshToken = params.get("refresh_token");
-      const type = params.get("type");
+      // 3. 兜底：手动解析 hash，处理 SDK 未自动触发的情况
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+        const type = params.get("type");
 
-      if (type === "recovery" && accessToken) {
-        // refresh_token 可能为空，用空字符串兜底
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || "",
-        });
-        if (!sessionError) {
-          setIsValidToken(true);
-          return;
+        if (type === "recovery" && accessToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || "",
+          });
+          if (error) {
+            // setSession 失败，若 onAuthStateChange 尚未触发则标记无效
+            setIsValidToken((prev) => (prev === true ? true : false));
+          }
+        } else {
+          // hash 存在但不是 recovery，3 秒后仍未收到事件则无效
+          timer = setTimeout(() => setIsValidToken((prev) => (prev === true ? true : false)), 3000);
         }
-        // setSession 失败时，用 getUser 验证 token 有效性
-        const { error: userError } = await supabase.auth.getUser(accessToken);
-        setIsValidToken(!userError);
       } else {
-        setIsValidToken(false);
+        // 无 hash 无 error，等待 onAuthStateChange 3 秒超时后降级
+        timer = setTimeout(() => setIsValidToken((prev) => (prev === true ? true : false)), 3000);
       }
     };
 
-    applyToken();
+    init();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,7 +137,7 @@ export default function ResetPasswordPage() {
         ) : isValidToken === false ? (
           <div className="space-y-4">
             <div className="rounded-lg px-4 py-3 text-sm bg-red-50 border border-red-100 text-red-600">
-              链接无效或已过期，请重新申请重置密码
+              {message || "链接无效或已过期，请重新申请重置密码"}
             </div>
             <div className="text-center text-sm text-gray-400">
               <Link href="/login" className="text-gray-900 hover:underline font-medium">
