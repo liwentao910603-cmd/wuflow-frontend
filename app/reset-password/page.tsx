@@ -17,8 +17,8 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    // 2. 监听 onAuthStateChange，等待 PASSWORD_RECOVERY 事件
-    //    Supabase JS SDK 会自动解析 URL hash 并触发该事件
+    // 兼容旧格式：监听 onAuthStateChange PASSWORD_RECOVERY 事件
+    // 新版 PKCE flow 不会触发此事件，但 implicit flow（hash token）会
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         if (timer) clearTimeout(timer);
@@ -27,8 +27,9 @@ export default function ResetPasswordPage() {
     });
 
     const init = async () => {
-      // 1. 先检查 query params 是否有 error（Supabase 在链接过期/无效时会附加）
       const searchParams = new URLSearchParams(window.location.search);
+
+      // 1. 检查 query params 是否有 error
       const urlError = searchParams.get("error_description") || searchParams.get("error");
       if (urlError) {
         setIsValidToken(false);
@@ -36,7 +37,20 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      // 3. 兜底：手动解析 hash，处理 SDK 未自动触发的情况
+      // 2. PKCE flow：URL 带有 ?code= 参数，交换成 session
+      const code = searchParams.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          setIsValidToken(false);
+          setMessage("链接已过期或无效，请重新申请重置密码");
+        } else {
+          setIsValidToken(true);
+        }
+        return;
+      }
+
+      // 3. 兜底：手动解析 hash（implicit flow，旧版 Supabase 默认格式）
       const hash = window.location.hash;
       if (hash) {
         const params = new URLSearchParams(hash.substring(1));
@@ -50,15 +64,14 @@ export default function ResetPasswordPage() {
             refresh_token: refreshToken || "",
           });
           if (error) {
-            // setSession 失败，若 onAuthStateChange 尚未触发则标记无效
             setIsValidToken((prev) => (prev === true ? true : false));
           }
+          // 成功时 setSession 会触发 onAuthStateChange PASSWORD_RECOVERY，由监听器设置 true
         } else {
-          // hash 存在但不是 recovery，3 秒后仍未收到事件则无效
           timer = setTimeout(() => setIsValidToken((prev) => (prev === true ? true : false)), 3000);
         }
       } else {
-        // 无 hash 无 error，等待 onAuthStateChange 3 秒超时后降级
+        // 无 code、无 hash、无 error，等待 onAuthStateChange 3 秒超时后降级
         timer = setTimeout(() => setIsValidToken((prev) => (prev === true ? true : false)), 3000);
       }
     };
