@@ -188,16 +188,16 @@ export default function DashboardPage() {
               {/* 主 CTA：整理新资料 */}
               <Link id="ob-ingest" href="/ingest" style={{ textDecoration: 'none' }}>
                 <div
-                  style={{ background: 'linear-gradient(135deg, #052e16 0%, #14532d 100%)', borderRadius: 12, padding: '26px 24px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 4px 16px rgba(5,46,22,0.3)', height: '100%', boxSizing: 'border-box' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 28px rgba(5,46,22,0.4)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(5,46,22,0.3)'; }}
+                  style={{ background: '#f0fdf4', borderTop: '1px solid rgba(22,163,74,0.15)', borderRight: '1px solid rgba(22,163,74,0.15)', borderBottom: '1px solid rgba(22,163,74,0.15)', borderLeft: '4px solid #16a34a', borderRadius: 10, padding: '26px 24px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(22,163,74,0.15)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)'; }}
                 >
-                  <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 18 }}>📥</div>
+                  <div style={{ width: 52, height: 52, borderRadius: 12, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 18 }}>📥</div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>整理新资料</span>
-                    <span style={{ color: '#00E5A0', fontSize: 18, lineHeight: 1 }}>→</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#15803d' }}>整理新资料</span>
+                    <span style={{ color: '#16a34a', fontSize: 18, lineHeight: 1 }}>→</span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 13, color: '#4b7c5a', lineHeight: 1.5 }}>
                     {notesTotal > 0 && recentNotes[0]
                       ? `上次整理：${formatDate(recentNotes[0].created_at)}`
                       : '开始第一篇 →'}

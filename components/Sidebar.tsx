@@ -55,7 +55,7 @@ function FeedbackModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1050, display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={onClose}
     >
       <div
@@ -444,7 +444,7 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
           {!collapsed && <span>意见反馈</span>}
         </button>
-        {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
+        {feedbackOpen && createPortal(<FeedbackModal onClose={() => setFeedbackOpen(false)} />, document.body)}
 
         <button
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
