@@ -85,11 +85,18 @@ export default function NoteDetailPage() {
   const [related, setRelated] = useState<RelatedNote[]>([]);
   const [relatedLoading, setRelatedLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // 复习计划状态
+  const [inReview, setInReview] = useState<boolean | null>(null); // null = 查询中
+  const [reviewPlanId, setReviewPlanId] = useState<string | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
       setUserEmail(session.user.email ?? null);
+      setUserId(session.user.id);
       const token = session.access_token;
 
       // 拉取笔记详情
@@ -105,6 +112,19 @@ export default function NoteDetailPage() {
       } finally {
         setLoading(false);
       }
+
+      // 查询复习计划状态（不阻塞主内容）
+      supabase
+        .from("review_plans")
+        .select("id")
+        .eq("source_note_id", noteId)
+        .eq("user_id", session.user.id)
+        .eq("status", "active")
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) { setInReview(true); setReviewPlanId(data.id); }
+          else setInReview(false);
+        });
 
       // 拉取相关笔记（不阻塞主内容）
       try {
@@ -123,6 +143,29 @@ export default function NoteDetailPage() {
       }
     });
   }, [noteId]);
+
+  const handleAddReview = async () => {
+    if (!userId || reviewLoading) return;
+    setReviewLoading(true);
+    const { data, error: err } = await supabase
+      .from("review_plans")
+      .insert({ source_note_id: noteId, user_id: userId, status: "active" })
+      .select("id")
+      .single();
+    if (!err && data) { setInReview(true); setReviewPlanId(data.id); }
+    setReviewLoading(false);
+  };
+
+  const handleCancelReview = async () => {
+    if (!reviewPlanId || reviewLoading) return;
+    setReviewLoading(true);
+    const { error: err } = await supabase
+      .from("review_plans")
+      .update({ status: "inactive" })
+      .eq("id", reviewPlanId);
+    if (!err) { setInReview(false); setReviewPlanId(null); }
+    setReviewLoading(false);
+  };
 
   return (
     <div
@@ -284,6 +327,29 @@ export default function NoteDetailPage() {
                 >
                   💬 去问答
                 </Link>
+
+                {/* 加入复习 / 取消复习 */}
+                {inReview === null ? (
+                  <span className="text-sm px-4 py-2 rounded-lg border border-gray-100 text-gray-300">
+                    检查中...
+                  </span>
+                ) : inReview ? (
+                  <button
+                    onClick={handleCancelReview}
+                    disabled={reviewLoading}
+                    className="text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 transition-colors disabled:opacity-50"
+                  >
+                    {reviewLoading ? "处理中..." : "✓ 已加入复习 · 取消"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleAddReview}
+                    disabled={reviewLoading}
+                    className="text-sm px-4 py-2 rounded-lg border border-green-200 text-green-600 bg-green-50 hover:bg-green-100 hover:border-green-300 transition-colors disabled:opacity-50"
+                  >
+                    {reviewLoading ? "添加中..." : "＋ 加入复习计划"}
+                  </button>
+                )}
               </div>
 
               {/* 相关笔记 */}
