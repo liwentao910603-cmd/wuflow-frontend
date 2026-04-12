@@ -69,12 +69,12 @@ function Heatmap({ data }: { data: Record<string, number> }) {
   const maxMinutes = Math.max(...days.map(d => d.minutes), 1);
 
   const getColor = (minutes: number) => {
-    if (minutes === 0) return "#f1f0ed";
+    if (minutes === 0) return "#ebedf0";
     const intensity = minutes / maxMinutes;
-    if (intensity < 0.25) return "#c7d2fe";
-    if (intensity < 0.5) return "#818cf8";
-    if (intensity < 0.75) return "#6366f1";
-    return "#4338ca";
+    if (intensity < 0.25) return "#c6e48b";
+    if (intensity < 0.5) return "#7bc96f";
+    if (intensity < 0.75) return "#239a3b";
+    return "#196127";
   };
 
   // 按周分组
@@ -107,7 +107,7 @@ function Heatmap({ data }: { data: Record<string, number> }) {
         {/* 月份标签 */}
         <div style={{ display: "flex", position: "absolute", top: 0, left: 0 }}>
           {monthLabels.map((m, i) => (
-            <div key={i} style={{ position: "absolute", left: m.col * 14, fontSize: 11, color: "#bbb" }}>
+            <div key={i} style={{ position: "absolute", left: m.col * 17, fontSize: 11, color: "#bbb" }}>
               {m.label}
             </div>
           ))}
@@ -119,10 +119,11 @@ function Heatmap({ data }: { data: Record<string, number> }) {
               {week.map((day, di) => (
                 <div
                   key={di}
-                  title={day.date ? `${day.date}：${day.minutes} 分钟` : ""}
+                  title={day.date ? (() => { const d = new Date(day.date); return `${d.getMonth()+1}月${d.getDate()}日 · 学习${day.minutes}分钟`; })() : ""}
                   style={{
-                    width: 12, height: 12, borderRadius: 2,
+                    width: 15, height: 15, borderRadius: 3,
                     background: day.date ? getColor(day.minutes) : "transparent",
+                    cursor: day.date && day.minutes > 0 ? "pointer" : "default",
                   }}
                 />
               ))}
@@ -132,8 +133,8 @@ function Heatmap({ data }: { data: Record<string, number> }) {
         {/* 图例 */}
         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8, justifyContent: "flex-end" }}>
           <span style={{ fontSize: 11, color: "#bbb" }}>少</span>
-          {["#f1f0ed", "#c7d2fe", "#818cf8", "#6366f1", "#4338ca"].map((c, i) => (
-            <div key={i} style={{ width: 12, height: 12, borderRadius: 2, background: c }} />
+          {["#ebedf0", "#c6e48b", "#7bc96f", "#239a3b", "#196127"].map((c, i) => (
+            <div key={i} style={{ width: 15, height: 15, borderRadius: 3, background: c }} />
           ))}
           <span style={{ fontSize: 11, color: "#bbb" }}>多</span>
         </div>

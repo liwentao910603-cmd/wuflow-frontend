@@ -59,6 +59,8 @@ export default function ReviewPage() {
   const [stage, setStage] = useState<Stage>("list");
   const [error, setError] = useState<string | null>(null);
   const [nextBusy, setNextBusy] = useState(false);
+  const [completedCount, setCompletedCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   const fetchToday = useCallback(async (t: string) => {
     setListLoading(true);
@@ -67,12 +69,14 @@ export default function ReviewPage() {
       const cached = getCache('review:today') as { items: ReviewItem[]; count: number } | null;
       if (cached) {
         setItems(cached.items || []);
+        setTotalCount(cached.items?.length || 0);
       } else {
         const res = await fetch(`${API}/review/today`, {
           headers: { Authorization: `Bearer ${t}` },
         });
         const data = await res.json();
         setItems(data.items || []);
+        setTotalCount(data.items?.length || 0);
         setCache('review:today', data);
       }
     } catch {
@@ -155,6 +159,7 @@ export default function ReviewPage() {
       invalidateCache('review:today');
       invalidatePrefix('dashboard:');
 
+      setCompletedCount(c => c + 1);
       // 还有下一篇 → 回列表继续
       const remaining = items.filter((_, i) => i !== currentIndex);
       setItems(remaining);
@@ -166,6 +171,14 @@ export default function ReviewPage() {
     } catch {}
     setSubmitting(false);
   };
+
+  function masteryLabel(level: number): { text: string; color: string } {
+    const pct = Math.round(level * 100);
+    if (pct === 0) return { text: '初学中', color: '#6b7280' };
+    if (pct <= 40) return { text: '学习中', color: '#3B82F6' };
+    if (pct <= 70) return { text: '掌握中', color: '#f97316' };
+    return { text: '已掌握', color: '#16a34a' };
+  }
 
   const ratingOptions = [
     { value: 1, label: "没懂", emoji: "😅", desc: "完全不会，需要重新学", color: "#fee2e2", textColor: "#dc2626" },
@@ -193,9 +206,17 @@ export default function ReviewPage() {
                 <h1 style={{ fontSize: 26, fontWeight: 600, color: 'rgba(0,0,0,0.87)', margin: '0 0 8px', letterSpacing: '-0.5px' }}>
                   今日复习 📖
                 </h1>
-                <p style={{ fontSize: 14, color: '#6b6b6b', margin: 0 }}>
-                  {listLoading ? "加载中..." : items.length === 0 ? "今天没有待复习的笔记" : `共 ${items.length} 篇笔记待复习`}
+                <p style={{ fontSize: 14, color: '#6b6b6b', margin: '0 0 16px' }}>
+                  {listLoading ? "加载中..." : items.length === 0 && completedCount === 0 ? "今天没有待复习的笔记" : `共 ${totalCount} 篇笔记待复习`}
                 </p>
+                {totalCount > 0 && (
+                  <div>
+                    <div style={{ height: 6, background: '#f0f0f0', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+                      <div style={{ height: '100%', background: '#16a34a', borderRadius: 99, width: `${(completedCount / totalCount) * 100}%`, transition: 'width .4s ease' }} />
+                    </div>
+                    <div style={{ fontSize: 12, color: '#a0a0a0' }}>{completedCount} / {totalCount} 篇已完成</div>
+                  </div>
+                )}
               </div>
 
               {listLoading ? (
@@ -217,8 +238,11 @@ export default function ReviewPage() {
                         <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(0,0,0,0.87)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {item.notes?.title || "未知笔记"}
                         </div>
-                        <div style={{ fontSize: 12, color: '#a0a0a0' }}>
-                          已复习 {item.repetition_count} 次 · 掌握度 {Math.round(item.mastery_level * 100)}%
+                        <div style={{ fontSize: 12, color: '#a0a0a0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          已复习 {item.repetition_count} 次 ·&nbsp;
+                          <span style={{ color: masteryLabel(item.mastery_level).color, fontWeight: 500 }}>
+                            {masteryLabel(item.mastery_level).text}
+                          </span>
                         </div>
                       </div>
                       <button

@@ -91,6 +91,7 @@ export default function QAPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [notesTotal, setNotesTotal] = useState<number | null>(null);
 
   // ── Auth + 加载历史 ──────────────────────────────────────────
   useEffect(() => {
@@ -100,6 +101,11 @@ export default function QAPage() {
       setAccessToken(session.access_token ?? null);
       const uid = session.user.id;
       setUserId(uid);
+      // 拉取笔记总数用于空状态提示
+      fetch(`${API}/notes?page=1&page_size=1`, { headers: { Authorization: `Bearer ${session.access_token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.total != null) setNotesTotal(d.total); })
+        .catch(() => {});
       // 从 localStorage 恢复历史
       try {
         const raw = localStorage.getItem(HISTORY_KEY(uid));
@@ -260,13 +266,14 @@ export default function QAPage() {
           {messages.length === 0 && (
             <div style={s.empty}>
               <div style={s.emptyIcon}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="1.5">
-                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/>
-                  <path d="M12 8v4l3 3"/>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00E5A0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
               </div>
               <h2 style={s.emptyTitle}>问问你的知识库</h2>
-              <p style={s.emptySub}>基于你整理的笔记回答，每条回答都标注来源</p>
+              <p style={s.emptySub}>
+                {notesTotal != null ? `你有 ${notesTotal} 篇笔记，直接问我任何问题` : '基于你整理的笔记回答，每条回答都标注来源'}
+              </p>
               <div style={s.suggests}>
                 {["帮我总结知识库的主要内容", "有哪些值得深入学习的概念？", "给我列出所有笔记的主题"].map((t, i) => (
                   <button key={i} className="suggest-btn" style={s.suggest} onClick={() => setInput(t)}>
@@ -377,7 +384,7 @@ const s: Record<string, React.CSSProperties> = {
   main:        { flex: 1, overflowY: "auto", minHeight: 0 },
   feed:        { maxWidth: 760, margin: "0 auto", padding: "32px 24px 24px", display: "flex", flexDirection: "column", gap: 16 },
   empty:       { textAlign: "center", padding: "48px 0 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 },
-  emptyIcon:   { width: 56, height: 56, borderRadius: "50%", background: "#f7f6f3", display: "flex", alignItems: "center", justifyContent: "center" },
+  emptyIcon:   { width: 72, height: 72, borderRadius: "50%", background: "rgba(0,229,160,0.1)", display: "flex", alignItems: "center", justifyContent: "center" },
   emptyTitle:  { fontSize: 20, fontWeight: 700, margin: 0 },
   emptySub:    { fontSize: 14, color: "#6b6b6b", margin: 0 },
   suggests:    { display: "flex", flexDirection: "column", gap: 8, width: "100%", maxWidth: 440, marginTop: 4 },

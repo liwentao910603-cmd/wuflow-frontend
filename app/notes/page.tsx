@@ -263,6 +263,16 @@ export default function NotesPage() {
                     <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
                       {note.summary}
                     </p>
+                    {note.concepts && note.concepts.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {note.concepts.slice(0, 3).map((c, i) => (
+                          <span key={i} className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">{c}</span>
+                        ))}
+                        {note.concepts.length > 3 && (
+                          <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">+{note.concepts.length - 3}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0 mt-0.5">
                     <button

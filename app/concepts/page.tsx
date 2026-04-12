@@ -18,6 +18,9 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("zh-CN", { month: "long", day: "numeric" });
 }
 
+const stripMarkdown = (text: string) =>
+  text.replace(/\*\*|__|\*|_|#{1,6}\s|`/g, '').trim();
+
 function StatusBadge({ status }: { status: ConceptSummary["status"] }) {
   if (status === "done") {
     return (
@@ -172,13 +175,23 @@ export default function ConceptsPage() {
                     <h3 className="text-base font-semibold text-gray-900 mb-2 leading-snug pr-5">{c.term}</h3>
                     {c.summary && (
                       <p className="text-xs text-gray-400 leading-relaxed">
-                        {c.summary.length > 60 ? c.summary.slice(0, 60) + "…" : c.summary}
+                        {(() => { const s = stripMarkdown(c.summary); return s.length > 60 ? s.slice(0, 60) + "…" : s; })()}
                       </p>
                     )}
                   </button>
                 </div>
               ))}
             </div>
+          )}
+
+          {/* 引导提示：概念数量少时提示整理更多笔记（问题11） */}
+          {!loading && concepts.length > 0 && concepts.length < 5 && (
+            <a href="/ingest" style={{ display: 'block', marginTop: 16, textDecoration: 'none' }}>
+              <div style={{ border: '1.5px dashed #d1d5db', borderRadius: 12, padding: '20px', textAlign: 'center', background: '#f9fafb', cursor: 'pointer' }}>
+                <div style={{ fontSize: 22, marginBottom: 8 }}>📚</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#6b7280' }}>整理更多笔记，AI 自动提取更多概念 →</div>
+              </div>
+            </a>
           )}
 
         </div>

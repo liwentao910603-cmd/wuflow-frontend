@@ -9,6 +9,11 @@ import { createClient } from "@/lib/supabase/client";
 const supabase = createClient();
 const API = process.env.NEXT_PUBLIC_API_URL;
 
+const AVATAR_COLORS = ['#00E5A0', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#10B981', '#6366F1', '#EC4899'];
+function getAvatarColor(char: string) {
+  return AVATAR_COLORS[(char.charCodeAt(0) || 0) % AVATAR_COLORS.length];
+}
+
 // ── 新手引导步骤 ────────────────────────────────────────────
 const OB_STEPS = [
   { id: "ob-s-ingest",  icon: "📥", title: "整理资料",   desc: "从这里开始，粘贴 URL 或上传 PDF，AI 自动生成笔记。" },
@@ -450,8 +455,8 @@ export default function Sidebar({ userEmail = "" }: SidebarProps) {
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
           className={`w-full flex items-center gap-2 px-2 h-10 rounded-md hover:bg-white transition-colors ${collapsed ? "justify-center px-0" : ""}`}
         >
-          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0" style={{ background: "#f1f0ed", color: "rgba(0,0,0,0.87)" }}>
-            {displayName.charAt(0)}
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0" style={{ background: getAvatarColor(displayName.charAt(0).toUpperCase()), color: "#fff" }}>
+            {displayName.charAt(0).toUpperCase()}
           </div>
           {!collapsed && (
             <>
