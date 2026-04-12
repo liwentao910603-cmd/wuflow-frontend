@@ -183,23 +183,60 @@ export default function DashboardPage() {
           {/* 快捷入口 */}
           <div style={{ marginBottom: 40 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b6b', letterSpacing: '0.5px', marginBottom: 14, textTransform: 'uppercase' }}>快捷入口</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
-              {[
-                { href: '/ingest', id: 'ob-ingest', icon: '📥', title: '整理新资料', desc: '粘贴 URL、上传 PDF 或文本', color: '#f0f4ff' },
-                { href: '/qa',     id: undefined,   icon: '💬', title: 'AI 问答',    desc: '基于你的知识库智能回答', color: '#f0fff4' },
-                { href: '/notes',  id: 'ob-notes',  icon: '📚', title: '浏览知识库', desc: `已整理 ${notesTotal} 篇笔记`, color: '#fff8f0' },
-              ].map((a) => (
-                <Link key={a.href} id={a.id} href={a.href} style={{ textDecoration: 'none' }}>
-                  <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '22px 22px', cursor: 'pointer', transition: 'border-color .15s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)' }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)')}
-                  >
-                    <div style={{ width: 40, height: 40, borderRadius: 8, background: a.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 14 }}>{a.icon}</div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,0.87)', marginBottom: 5 }}>{a.title}</div>
-                    <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{a.desc}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr 1fr', gap: 14 }}>
+
+              {/* 主 CTA：整理新资料 */}
+              <Link id="ob-ingest" href="/ingest" style={{ textDecoration: 'none' }}>
+                <div
+                  style={{ background: '#0D1117', borderRadius: 12, padding: '26px 24px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 4px 16px rgba(0,0,0,0.14)', height: '100%', boxSizing: 'border-box' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 28px rgba(0,0,0,0.22)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.14)'; }}
+                >
+                  <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(0,229,160,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 18 }}>📥</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>整理新资料</span>
+                    <span style={{ color: '#00E5A0', fontSize: 18, lineHeight: 1 }}>→</span>
                   </div>
-                </Link>
-              ))}
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
+                    {notesTotal > 0 && recentNotes[0]
+                      ? `上次整理：${formatDate(recentNotes[0].created_at)}`
+                      : '开始第一篇 →'}
+                  </div>
+                </div>
+              </Link>
+
+              {/* AI 问答 */}
+              <Link href="/qa" style={{ textDecoration: 'none' }}>
+                <div
+                  style={{ background: '#fff', borderTop: '1px solid rgba(0,0,0,0.08)', borderRight: '1px solid rgba(0,0,0,0.08)', borderBottom: '1px solid rgba(0,0,0,0.08)', borderLeft: '3px solid #3B82F6', borderRadius: 10, padding: '22px 20px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(59,130,246,0.12)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)'; }}
+                >
+                  <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 14 }}>💬</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,0.87)' }}>AI 问答</span>
+                    <span style={{ color: '#3B82F6', fontSize: 14, lineHeight: 1 }}>→</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>基于你的知识库智能回答</div>
+                </div>
+              </Link>
+
+              {/* 浏览知识库 */}
+              <Link id="ob-notes" href="/notes" style={{ textDecoration: 'none' }}>
+                <div
+                  style={{ background: '#fff', borderTop: '1px solid rgba(0,0,0,0.08)', borderRight: '1px solid rgba(0,0,0,0.08)', borderBottom: '1px solid rgba(0,0,0,0.08)', borderLeft: '3px solid #8B5CF6', borderRadius: 10, padding: '22px 20px', cursor: 'pointer', transition: 'transform 0.18s, box-shadow 0.18s', boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)', height: '100%', boxSizing: 'border-box' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(139,92,246,0.12)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06)'; }}
+                >
+                  <div style={{ width: 52, height: 52, borderRadius: 12, background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 14 }}>📚</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,0.87)' }}>浏览知识库</span>
+                    <span style={{ color: '#8B5CF6', fontSize: 14, lineHeight: 1 }}>→</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>已整理 {notesTotal} 篇笔记</div>
+                </div>
+              </Link>
+
             </div>
           </div>
 
