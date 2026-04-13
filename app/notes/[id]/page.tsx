@@ -85,11 +85,9 @@ export default function NoteDetailPage() {
   const [related, setRelated] = useState<RelatedNote[]>([]);
   const [relatedLoading, setRelatedLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
 
   // 复习计划状态
   const [inReview, setInReview] = useState<boolean | null>(null); // null = 查询中
-  const [reviewPlanId, setReviewPlanId] = useState<string | null>(null);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
@@ -97,7 +95,6 @@ export default function NoteDetailPage() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { window.location.href = "/login"; return; }
       setUserEmail(session.user.email ?? null);
-      setUserId(session.user.id);
       const token = session.access_token;
 
       // 拉取笔记详情
@@ -114,18 +111,13 @@ export default function NoteDetailPage() {
         setLoading(false);
       }
 
-      // 查询复习计划状态（不阻塞主内容）
-      supabase
-        .from("review_plans")
-        .select("id")
-        .eq("source_note_id", noteId)
-        .eq("user_id", session.user.id)
-        .eq("status", "active")
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data) { setInReview(true); setReviewPlanId(data.id); }
-          else setInReview(false);
-        });
+      // 查询复习计划状态（调后端接口，与 ingest 页一致）
+      fetch(`${API}/review/status/${noteId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((data) => setInReview(data.in_review ?? false))
+        .catch(() => setInReview(false));
 
       // 拉取相关笔记（不阻塞主内容）
       try {
@@ -145,39 +137,34 @@ export default function NoteDetailPage() {
     });
   }, [noteId]);
 
-  const handleAddReview = async () => {
-    if (!userId || reviewLoading) return;
+  const toggleReview = async () => {
+    if (reviewLoading || inReview === null) return;
     setReviewLoading(true);
     setReviewError(null);
-    const { data, error: err } = await supabase
-      .from("review_plans")
-      .insert({ source_note_id: noteId, user_id: userId, status: "active" })
-      .select("id")
-      .single();
-    if (err || !data) {
-      setReviewError("加入复习计划失败，请稍后重试");
-    } else {
-      setInReview(true);
-      setReviewPlanId(data.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (inReview) {
+        const res = await fetch(`${API}/review/remove/${noteId}`, {
+          method: "DELETE",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error("remove");
+        setInReview(false);
+      } else {
+        const res = await fetch(`${API}/review/add`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ note_id: noteId }),
+        });
+        if (!res.ok) throw new Error("add");
+        setInReview(true);
+      }
+    } catch {
+      setReviewError(inReview ? "取消复习计划失败，请稍后重试" : "加入复习计划失败，请稍后重试");
+    } finally {
+      setReviewLoading(false);
     }
-    setReviewLoading(false);
-  };
-
-  const handleCancelReview = async () => {
-    if (!reviewPlanId || reviewLoading) return;
-    setReviewLoading(true);
-    setReviewError(null);
-    const { error: err } = await supabase
-      .from("review_plans")
-      .update({ status: "inactive" })
-      .eq("id", reviewPlanId);
-    if (err) {
-      setReviewError("取消复习计划失败，请稍后重试");
-    } else {
-      setInReview(false);
-      setReviewPlanId(null);
-    }
-    setReviewLoading(false);
   };
 
   return (
@@ -354,21 +341,21 @@ export default function NoteDetailPage() {
                   <span className="text-sm px-4 py-2 rounded-lg border border-gray-100 text-gray-300">
                     检查中...
                   </span>
-                ) : inReview ? (
-                  <button
-                    onClick={handleCancelReview}
-                    disabled={reviewLoading}
-                    className="text-sm px-4 py-2 rounded-lg border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 transition-colors disabled:opacity-50"
-                  >
-                    {reviewLoading ? "处理中..." : "✓ 已加入复习 · 取消"}
-                  </button>
                 ) : (
                   <button
-                    onClick={handleAddReview}
+                    onClick={toggleReview}
                     disabled={reviewLoading}
-                    className="text-sm px-4 py-2 rounded-lg border border-green-200 text-green-600 bg-green-50 hover:bg-green-100 hover:border-green-300 transition-colors disabled:opacity-50"
+                    className={`text-sm px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 ${
+                      inReview
+                        ? "border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500"
+                        : "border-green-200 text-green-600 bg-green-50 hover:bg-green-100 hover:border-green-300"
+                    }`}
                   >
-                    {reviewLoading ? "添加中..." : "＋ 加入复习计划"}
+                    {reviewLoading
+                      ? "处理中..."
+                      : inReview
+                      ? "✓ 已加入复习 · 取消"
+                      : "＋ 加入复习计划"}
                   </button>
                 )}
               </div>
