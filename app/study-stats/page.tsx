@@ -430,37 +430,50 @@ export default function StudyStatsPage() {
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                      {blindSpots.weak_spots.map((ws, i) => (
-                        <div key={i} style={{ padding: "16px", background: "#fafafa", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)" }}>
-                          {/* tag + 分数 + 次数 */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", padding: "2px 10px", borderRadius: 99 }}>
-                              {ws.tag}
-                            </span>
-                            <span style={{ fontSize: 13, color: "#6b6b6b" }}>
-                              ⭐ {ws.avg_score.toFixed(1)} / 5
-                            </span>
-                            <span style={{ fontSize: 12, color: "#a0a0a0" }}>
-                              复习 {ws.count} 次
-                            </span>
-                          </div>
+                      {(() => {
+                        const seenNoteIds = new Set<string>();
+                        return blindSpots.weak_spots.map((ws, i) => {
+                          const freshNotes = (ws.notes ?? []).filter((n) => {
+                            if (seenNoteIds.has(n.note_id)) return false;
+                            seenNoteIds.add(n.note_id);
+                            return true;
+                          }).slice(0, 3);
 
-                          {/* 低分笔记列表 */}
-                          {ws.notes && ws.notes.length > 0 && (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                              {ws.notes.slice(0, 3).map((n, j) => (
-                                <button
-                                  key={j}
-                                  onClick={() => { window.location.href = `/notes/${n.note_id}`; }}
-                                  style={{ textAlign: "left", background: "none", border: "none", padding: "3px 0", cursor: "pointer", fontSize: 13, color: "#4338ca", textDecoration: "underline", textUnderlineOffset: 2, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                                >
-                                  {n.title}
-                                </button>
-                              ))}
+                          return (
+                            <div key={i} style={{ padding: "16px", background: "#fafafa", borderRadius: 8, border: "1px solid rgba(0,0,0,0.06)" }}>
+                              {/* tag + 分数 + 次数 */}
+                              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: "#dc2626", background: "#fef2f2", border: "1px solid #fecaca", padding: "2px 10px", borderRadius: 99 }}>
+                                  {ws.tag}
+                                </span>
+                                <span style={{ fontSize: 13, color: "#6b6b6b" }}>
+                                  ⭐ {ws.avg_score.toFixed(1)} / 5
+                                </span>
+                                <span style={{ fontSize: 12, color: "#a0a0a0" }}>
+                                  复习 {ws.count} 次
+                                </span>
+                              </div>
+
+                              {/* 低分笔记列表 */}
+                              {freshNotes.length > 0 ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                  {freshNotes.map((n, j) => (
+                                    <button
+                                      key={j}
+                                      onClick={() => { window.location.href = `/notes/${n.note_id}`; }}
+                                      style={{ textAlign: "left", background: "none", border: "none", padding: "3px 0", cursor: "pointer", fontSize: 13, color: "#4338ca", textDecoration: "underline", textUnderlineOffset: 2, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                    >
+                                      {n.title}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: 12, color: "#a0a0a0" }}>所涉笔记已在其他标签中显示</span>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      ))}
+                          );
+                        });
+                      })()}
                     </div>
                   )}
                 </div>
