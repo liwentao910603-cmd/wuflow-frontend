@@ -37,6 +37,8 @@ async function getAllSlugs(): Promise<string[]> {
   }
 }
 
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   const slugs = await getAllSlugs();
   return slugs.map((slug) => ({ slug }));

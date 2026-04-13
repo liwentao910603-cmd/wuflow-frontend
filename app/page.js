@@ -81,6 +81,7 @@ export default function Home() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginRight: 16 }}>
             <a href="#features" style={{ fontSize: 14, color: '#6b6b6b', textDecoration: 'none', padding: '8px 12px' }}>功能</a>
             <a href="#faq" style={{ fontSize: 14, color: '#6b6b6b', textDecoration: 'none', padding: '8px 12px' }}>FAQ</a>
+            <Link href="/blog" style={{ fontSize: 14, color: '#6b6b6b', textDecoration: 'none', padding: '8px 12px' }}>博客</Link>
           </div>
           {isLoggedIn ? (
             <a href="/dashboard" style={{ background: '#111', color: '#fff', padding: '8px 18px', borderRadius: 6, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>进入我的空间 →</a>
