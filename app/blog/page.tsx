@@ -23,6 +23,244 @@ function formatDate(iso: string) {
   });
 }
 
+const TAG_MAP: Record<string, { bg: string; emoji: string }> = {
+  学习方法: { bg: "#E1F5EE", emoji: "🧠" },
+  "AI工具":  { bg: "#EEEDFE", emoji: "⚡" },
+  "AI 工具": { bg: "#EEEDFE", emoji: "⚡" },
+  知识管理:  { bg: "#E6F1FB", emoji: "🗺️" },
+  间隔重复:  { bg: "#E1F5EE", emoji: "🔁" },
+  自学经验:  { bg: "#FAEEDA", emoji: "📊" },
+  产品日志:  { bg: "#FAECE7", emoji: "✍️" },
+};
+const DEFAULT_TAG = { bg: "#F1EFE8", emoji: "📝" };
+
+function tagStyle(tags?: string[]) {
+  const first = tags?.[0];
+  return (first && TAG_MAP[first]) ? TAG_MAP[first] : DEFAULT_TAG;
+}
+
+/* ── Featured Card ─────────────────────────────────────────────────── */
+function FeaturedCard({ post }: { post: Post }) {
+  const { emoji } = tagStyle(post.tags);
+  const firstTag = post.tags?.[0];
+
+  return (
+    <Link href={`/blog/${post.slug}`} style={{ textDecoration: "none", display: "block" }}>
+      <article
+        style={{
+          display: "grid",
+          gridTemplateColumns: "200px 1fr",
+          border: "1px solid rgba(0,0,0,0.09)",
+          borderRadius: 12,
+          overflow: "hidden",
+          background: "#fff",
+          transition: "border-color 0.15s",
+          marginBottom: 40,
+        }}
+        className="group hover:[border-color:rgba(0,0,0,0.25)]"
+      >
+        {/* 左侧深色背景 */}
+        <div
+          style={{
+            background: "#0D1117",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            minHeight: 180,
+          }}
+        >
+          <span style={{ fontSize: 40 }}>{emoji}</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#00E5A0", letterSpacing: "0.12em" }}>
+            FEATURED
+          </span>
+        </div>
+
+        {/* 右侧内容 */}
+        <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {firstTag && (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#1D9E75",
+                  background: "#E1F5EE",
+                  padding: "2px 8px",
+                  borderRadius: 20,
+                }}
+              >
+                {firstTag}
+              </span>
+            )}
+            <time style={{ fontSize: 11, color: "#9ca3af" }}>{formatDate(post.published_at)}</time>
+          </div>
+
+          <h2
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: "rgba(0,0,0,0.87)",
+              margin: 0,
+              lineHeight: 1.4,
+              letterSpacing: "-0.3px",
+              transition: "color 0.15s",
+            }}
+            className="group-hover:text-[#1D9E75]"
+          >
+            {post.title}
+          </h2>
+
+          {post.summary && (
+            <p
+              style={{
+                fontSize: 13,
+                color: "#6b7280",
+                lineHeight: 1.65,
+                margin: 0,
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {post.summary}
+            </p>
+          )}
+
+          <span style={{ fontSize: 13, color: "#1D9E75", fontWeight: 500, marginTop: 4 }}>
+            阅读全文 →
+          </span>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+/* ── Grid Card ──────────────────────────────────────────────────────── */
+function GridCard({ post }: { post: Post }) {
+  const { bg, emoji } = tagStyle(post.tags);
+  const firstTag = post.tags?.[0];
+
+  return (
+    <Link href={`/blog/${post.slug}`} style={{ textDecoration: "none", display: "block" }}>
+      <article
+        style={{
+          border: "1px solid rgba(0,0,0,0.09)",
+          borderRadius: 12,
+          overflow: "hidden",
+          background: "#fff",
+          transition: "border-color 0.15s",
+        }}
+        className="group hover:[border-color:rgba(0,0,0,0.25)]"
+      >
+        {/* 彩色封面区 */}
+        <div
+          style={{
+            height: 96,
+            background: bg,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 32,
+          }}
+        >
+          {emoji}
+        </div>
+
+        {/* 卡片体 */}
+        <div style={{ padding: "16px 18px 18px" }}>
+          {firstTag && (
+            <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 500 }}>
+              #{firstTag}
+            </span>
+          )}
+
+          <h3
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: "rgba(0,0,0,0.85)",
+              margin: "6px 0 6px",
+              lineHeight: 1.45,
+              letterSpacing: "-0.2px",
+              transition: "color 0.15s",
+            }}
+            className="group-hover:text-[#1D9E75]"
+          >
+            {post.title}
+          </h3>
+
+          {post.summary && (
+            <p
+              style={{
+                fontSize: 12,
+                color: "#6b7280",
+                lineHeight: 1.6,
+                margin: "0 0 12px",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {post.summary}
+            </p>
+          )}
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <time style={{ fontSize: 11, color: "#9ca3af" }}>{formatDate(post.published_at)}</time>
+            <span style={{ fontSize: 12, color: "#1D9E75", fontWeight: 500 }}>阅读 →</span>
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+/* ── Loading Skeleton ───────────────────────────────────────────────── */
+function Skeleton() {
+  return (
+    <>
+      {/* Featured skeleton */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "200px 1fr",
+          border: "1px solid rgba(0,0,0,0.07)",
+          borderRadius: 12,
+          overflow: "hidden",
+          marginBottom: 40,
+          minHeight: 180,
+        }}
+      >
+        <div style={{ background: "#f3f4f6" }} />
+        <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ height: 12, background: "#f3f4f6", borderRadius: 4, width: "25%" }} />
+          <div style={{ height: 20, background: "#f3f4f6", borderRadius: 4, width: "70%" }} />
+          <div style={{ height: 12, background: "#f3f4f6", borderRadius: 4, width: "90%" }} />
+          <div style={{ height: 12, background: "#f3f4f6", borderRadius: 4, width: "60%" }} />
+        </div>
+      </div>
+      {/* Grid skeleton */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 16 }}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} style={{ border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ height: 96, background: "#f3f4f6" }} />
+            <div style={{ padding: "16px 18px 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ height: 11, background: "#f3f4f6", borderRadius: 4, width: "30%" }} />
+              <div style={{ height: 15, background: "#f3f4f6", borderRadius: 4, width: "80%" }} />
+              <div style={{ height: 11, background: "#f3f4f6", borderRadius: 4, width: "95%" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ── Page ───────────────────────────────────────────────────────────── */
 export default function BlogListPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +275,8 @@ export default function BlogListPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const [featured, ...rest] = posts;
 
   return (
     <div
@@ -55,90 +295,59 @@ export default function BlogListPage() {
       </nav>
 
       {/* 内容区 */}
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "64px 24px 80px" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "64px 24px 80px" }}>
 
-        {/* 页头 */}
+        {/* Hero */}
         <div style={{ marginBottom: 48 }}>
+          <div style={{ marginBottom: 12 }}>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                color: "#1D9E75",
+                background: "#E1F5EE",
+                padding: "4px 12px",
+                borderRadius: 20,
+              }}
+            >
+              <span style={{ fontSize: 8, lineHeight: 1 }}>●</span>
+              学习方法 · 知识管理 · 独立开发
+            </span>
+          </div>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: "rgba(0,0,0,0.87)", margin: "0 0 6px", letterSpacing: "-0.5px" }}>
             博客
           </h1>
           <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
-            关于 AI 学习、知识管理和自我成长的思考
+            关于 AI 学习、间隔重复与自我成长的深度思考，每周更新。
           </p>
         </div>
 
-        {/* 文章列表 */}
+        {/* 文章区 */}
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {[1, 2, 3].map((i) => (
-              <div key={i} style={{ padding: "20px 0", borderBottom: "1px solid rgba(0,0,0,0.07)" }}>
-                <div style={{ height: 18, background: "#f3f4f6", borderRadius: 4, width: "60%", marginBottom: 8 }} />
-                <div style={{ height: 12, background: "#f3f4f6", borderRadius: 4, width: "20%", marginBottom: 8 }} />
-                <div style={{ height: 12, background: "#f3f4f6", borderRadius: 4, width: "85%" }} />
-              </div>
-            ))}
-          </div>
+          <Skeleton />
         ) : posts.length === 0 ? (
           <p style={{ fontSize: 13, color: "#d1d5db" }}>暂无文章</p>
         ) : (
-          <div>
-            {posts.map((post, i) => (
-              <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                style={{ display: "block", textDecoration: "none" }}
+          <>
+            {featured && <FeaturedCard post={featured} />}
+
+            {rest.length > 0 && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                  gap: 16,
+                }}
               >
-                <article
-                  style={{
-                    padding: "20px 0",
-                    borderTop: i === 0 ? "1px solid rgba(0,0,0,0.07)" : undefined,
-                    borderBottom: "1px solid rgba(0,0,0,0.07)",
-                    cursor: "pointer",
-                  }}
-                  className="group"
-                >
-                  <h2
-                    style={{
-                      fontSize: 17,
-                      fontWeight: 600,
-                      color: "rgba(0,0,0,0.85)",
-                      margin: "0 0 6px",
-                      lineHeight: 1.45,
-                      letterSpacing: "-0.2px",
-                      transition: "color 0.15s",
-                    }}
-                    className="group-hover:text-[#2383E2]"
-                  >
-                    {post.title}
-                  </h2>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: post.summary ? 8 : 0 }}>
-                    <time style={{ fontSize: 11, color: "#9ca3af" }}>{formatDate(post.published_at)}</time>
-                    {post.tags?.map((tag) => (
-                      <span key={tag} style={{ fontSize: 11, color: "#c4c9d4" }}>#{tag}</span>
-                    ))}
-                  </div>
-
-                  {post.summary && (
-                    <p
-                      style={{
-                        fontSize: 13,
-                        color: "#6b7280",
-                        lineHeight: 1.65,
-                        margin: 0,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {post.summary}
-                    </p>
-                  )}
-                </article>
-              </Link>
-            ))}
-          </div>
+                {rest.map((post) => (
+                  <GridCard key={post.slug} post={post} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
