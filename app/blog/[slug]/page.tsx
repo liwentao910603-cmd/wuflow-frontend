@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import ReactMarkdown from "react-markdown";
+import ArticleSchema from "@/components/ArticleSchema";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000";
 
@@ -30,6 +31,7 @@ interface Post {
   content: string;
   cover_image?: string;
   published_at: string;
+  updated_at?: string;
   tags?: string[];
 }
 
@@ -84,15 +86,28 @@ export async function generateMetadata(
   if (!post) return { title: "文章不存在 — 悟流 WuFlow" };
 
   return {
-    title: `${post.title} — 悟流 WuFlow`,
+    title: `${post.title} | WuFlow 悟流`,
     description: post.summary,
+    keywords: post.tags?.join(", "),
+    authors: [{ name: "怪仔 Guaizai", url: "https://wuflow.cn" }],
     openGraph: {
       title: post.title,
       description: post.summary,
-      images: post.cover_image ? [{ url: post.cover_image }] : [],
+      url: `https://wuflow.cn/blog/${slug}`,
+      siteName: "WuFlow 悟流",
+      locale: "zh_CN",
       type: "article",
       publishedTime: post.published_at,
-      siteName: "悟流 WuFlow",
+      images: post.cover_image ? [{ url: post.cover_image }] : [],
+      tags: post.tags,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.summary,
+    },
+    alternates: {
+      canonical: `https://wuflow.cn/blog/${slug}`,
     },
   };
 }
@@ -132,6 +147,15 @@ export default async function BlogPostPage(
 
         return (
           <>
+            <ArticleSchema
+              title={post.title}
+              description={post.summary}
+              slug={slug}
+              publishedAt={post.published_at}
+              updatedAt={post.updated_at}
+              tags={post.tags}
+            />
+
             {/* 封面色块 */}
             <div
               style={{
