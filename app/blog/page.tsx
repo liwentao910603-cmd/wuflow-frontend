@@ -1,10 +1,7 @@
-import Link from "next/link";
-import type { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "博客 — 悟流 WuFlow",
-  description: "WuFlow 团队关于 AI 学习、知识管理和自我成长的思考与分享。",
-};
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:9000";
 
@@ -18,17 +15,6 @@ interface Post {
   tags?: string[];
 }
 
-async function getPosts(): Promise<Post[]> {
-  try {
-    const res = await fetch(`${API}/blog/posts`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data : (data.posts ?? []);
-  } catch {
-    return [];
-  }
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("zh-CN", {
     year: "numeric",
@@ -37,8 +23,20 @@ function formatDate(iso: string) {
   });
 }
 
-export default async function BlogListPage() {
-  const posts = await getPosts();
+export default function BlogListPage() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/blog/posts`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setPosts(Array.isArray(data) ? data : (data.posts ?? []));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div
@@ -70,7 +68,17 @@ export default async function BlogListPage() {
         </div>
 
         {/* 文章列表 */}
-        {posts.length === 0 ? (
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ padding: "20px 0", borderBottom: "1px solid rgba(0,0,0,0.07)" }}>
+                <div style={{ height: 18, background: "#f3f4f6", borderRadius: 4, width: "60%", marginBottom: 8 }} />
+                <div style={{ height: 12, background: "#f3f4f6", borderRadius: 4, width: "20%", marginBottom: 8 }} />
+                <div style={{ height: 12, background: "#f3f4f6", borderRadius: 4, width: "85%" }} />
+              </div>
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
           <p style={{ fontSize: 13, color: "#d1d5db" }}>暂无文章</p>
         ) : (
           <div>
