@@ -17,7 +17,7 @@ interface Post {
 
 async function getPost(slug: string): Promise<Post | null> {
   try {
-    const res = await fetch(`${API}/blog/posts/${slug}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API}/api/v1/blog/posts/${slug}`, { next: { revalidate: 3600 } });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -27,7 +27,7 @@ async function getPost(slug: string): Promise<Post | null> {
 
 async function getAllSlugs(): Promise<string[]> {
   try {
-    const res = await fetch(`${API}/blog/posts`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API}/api/v1/blog/posts`, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = await res.json();
     const posts: Post[] = Array.isArray(data) ? data : (data.posts ?? []);

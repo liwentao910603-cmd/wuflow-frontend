@@ -20,7 +20,7 @@ interface Post {
 
 async function getPosts(): Promise<Post[]> {
   try {
-    const res = await fetch(`${API}/blog/posts`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API}/api/v1/blog/posts`, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data) ? data : (data.posts ?? []);

@@ -36,7 +36,7 @@ export default function Home() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data?.user_count) setUserCount(data.user_count); })
       .catch(() => {});
-    fetch(`${API_URL}/blog/posts`)
+    fetch(`${API_URL}/api/v1/blog/posts`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) return;

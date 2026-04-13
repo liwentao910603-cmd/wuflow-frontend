@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 动态博客文章
   let blogRoutes: MetadataRoute.Sitemap = [];
   try {
-    const res = await fetch(`${API}/blog/posts`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${API}/api/v1/blog/posts`, { next: { revalidate: 3600 } });
     if (res.ok) {
       const data = await res.json();
       const posts: Post[] = Array.isArray(data) ? data : (data.posts ?? []);
