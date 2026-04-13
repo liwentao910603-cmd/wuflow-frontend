@@ -56,45 +56,88 @@ export default async function BlogListPage() {
         </div>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-6 py-16">
-        <div className="mb-12">
-          <h1 className="text-3xl font-semibold text-gray-900 mb-3 tracking-tight">博客</h1>
-          <p className="text-gray-400 text-sm">关于 AI 学习、知识管理和自我成长的思考与分享</p>
+      {/* 内容区 */}
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "64px 24px 80px" }}>
+
+        {/* 页头 */}
+        <div style={{ marginBottom: 48 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: "rgba(0,0,0,0.87)", margin: "0 0 6px", letterSpacing: "-0.5px" }}>
+            博客
+          </h1>
+          <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>
+            关于 AI 学习、知识管理和自我成长的思考
+          </p>
         </div>
 
+        {/* 文章列表 */}
         {posts.length === 0 ? (
-          <p className="text-gray-300 text-sm">暂无文章</p>
+          <p style={{ fontSize: 13, color: "#d1d5db" }}>暂无文章</p>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {posts.map((post) => (
-              <article key={post.slug} className="py-8 group">
-                <Link href={`/blog/${post.slug}`} className="block">
-                  <div className="flex items-center gap-2 mb-2">
-                    <time className="text-xs text-gray-400">{formatDate(post.published_at)}</time>
-                    {post.tags?.map((tag) => (
-                      <span key={tag} className="text-xs text-gray-300">#{tag}</span>
-                    ))}
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900 group-hover:text-[#2383E2] transition-colors mb-2 leading-snug">
+          <div>
+            {posts.map((post, i) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                style={{ display: "block", textDecoration: "none" }}
+              >
+                <article
+                  style={{
+                    padding: "20px 0",
+                    borderTop: i === 0 ? "1px solid rgba(0,0,0,0.07)" : undefined,
+                    borderBottom: "1px solid rgba(0,0,0,0.07)",
+                    cursor: "pointer",
+                  }}
+                  className="group"
+                >
+                  <h2
+                    style={{
+                      fontSize: 17,
+                      fontWeight: 600,
+                      color: "rgba(0,0,0,0.85)",
+                      margin: "0 0 6px",
+                      lineHeight: 1.45,
+                      letterSpacing: "-0.2px",
+                      transition: "color 0.15s",
+                    }}
+                    className="group-hover:text-[#2383E2]"
+                  >
                     {post.title}
                   </h2>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: post.summary ? 8 : 0 }}>
+                    <time style={{ fontSize: 11, color: "#9ca3af" }}>{formatDate(post.published_at)}</time>
+                    {post.tags?.map((tag) => (
+                      <span key={tag} style={{ fontSize: 11, color: "#c4c9d4" }}>#{tag}</span>
+                    ))}
+                  </div>
+
                   {post.summary && (
-                    <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">{post.summary}</p>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "#6b7280",
+                        lineHeight: 1.65,
+                        margin: 0,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {post.summary}
+                    </p>
                   )}
-                  <span className="inline-block mt-3 text-xs text-[#2383E2] group-hover:underline">
-                    阅读全文 →
-                  </span>
-                </Link>
-              </article>
+                </article>
+              </Link>
             ))}
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 px-6 py-6 mt-16 flex justify-between items-center text-xs text-gray-400">
-        <span>悟流 WuFlow · wuflow.cn</span>
-        <span>让知识流动起来</span>
+      <footer style={{ borderTop: "1px solid rgba(0,0,0,0.07)", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 12, color: "#c4c9d4" }}>悟流 WuFlow · wuflow.cn</span>
+        <span style={{ fontSize: 12, color: "#c4c9d4" }}>让知识流动起来</span>
       </footer>
     </div>
   );
