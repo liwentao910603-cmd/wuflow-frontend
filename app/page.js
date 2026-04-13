@@ -78,7 +78,7 @@ export default function Home() {
           ) : (
             <>
               <a href="/login" style={{ fontSize: 14, color: '#6b6b6b', textDecoration: 'none', padding: '8px 14px' }}>登录</a>
-              <a href="/login" style={{ background: '#111', color: '#fff', padding: '8px 18px', borderRadius: 6, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>免费注册</a>
+              <a href="/register" style={{ background: '#111', color: '#fff', padding: '8px 18px', borderRadius: 6, fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>免费注册</a>
             </>
           )}
         </div>
@@ -107,13 +107,17 @@ export default function Home() {
               智能遗忘复习
             </p>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <a href="/login" style={{ background: '#00E5A0', color: '#0D1117', padding: '13px 28px', borderRadius: 6, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+              <a href="/register" style={{ background: '#00E5A0', color: '#0D1117', padding: '13px 28px', borderRadius: 6, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                 免费开始使用 →
               </a>
               <a href="#features" style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, textDecoration: 'none', padding: '13px 20px' }}>
                 了解更多 ↓
               </a>
             </div>
+            <p style={{ marginTop: 14, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
+              已有账号？{' '}
+              <a href="/login" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'underline' }}>直接登录</a>
+            </p>
           </div>
 
           {/* 右侧 Mock 卡片 */}
@@ -421,7 +425,7 @@ export default function Home() {
           开始构建你的私人知识库
         </h2>
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.35)', margin: '0 0 32px' }}>完全免费 · 注册即用 · 数据仅自己可见</p>
-        <a href="/login" style={{ background: '#00E5A0', color: '#0D1117', padding: '14px 36px', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
+        <a href="/register" style={{ background: '#00E5A0', color: '#0D1117', padding: '14px 36px', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
           免费开始使用 →
         </a>
       </section>

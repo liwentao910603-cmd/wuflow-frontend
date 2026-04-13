@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-type Mode = "login" | "signup" | "forgot";
+type Mode = "login" | "forgot";
 
 const supabase = createClient();
 
@@ -22,29 +22,17 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      if (mode === "login") {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-        if (error) {
-          setStatus("error");
-          setMessage(
-            error.message === "Invalid login credentials"
-              ? "邮箱或密码错误"
-              : "登录失败，请稍后重试"
-          );
-        } else {
-          window.location.href = "/dashboard";
-        }
+      if (error) {
+        setStatus("error");
+        setMessage(
+          error.message === "Invalid login credentials"
+            ? "邮箱或密码错误"
+            : "登录失败，请稍后重试"
+        );
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-
-        if (error) {
-          setStatus("error");
-          setMessage("注册失败，请稍后重试");
-        } else {
-          setStatus("success");
-          setMessage("注册成功！请检查邮箱，点击验证链接后即可登录。");
-        }
+        window.location.href = "/dashboard";
       }
     } catch (e: unknown) {
       console.error("[login] 异常:", e);
@@ -98,13 +86,11 @@ export default function LoginPage() {
       <div className="max-w-sm mx-auto px-6 py-20">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-gray-900 mb-1">
-            {mode === "login" ? "登录" : mode === "signup" ? "注册" : "找回密码"}
+            {mode === "login" ? "登录" : "找回密码"}
           </h1>
           <p className="text-sm text-gray-400">
             {mode === "login"
               ? "登录后使用悟流的全部功能"
-              : mode === "signup"
-              ? "创建账号，开始整理你的知识"
               : "输入注册邮箱，我们将发送重置链接"}
           </p>
         </div>
@@ -188,9 +174,8 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setStatus("idle"); setMessage(""); }}
-                placeholder={mode === "signup" ? "至少6位" : "输入密码"}
+                placeholder="输入密码"
                 required
-                minLength={mode === "signup" ? 6 : undefined}
                 className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-gray-400 transition-colors"
               />
             </div>
@@ -212,9 +197,7 @@ export default function LoginPage() {
               disabled={status === "loading"}
               className="w-full bg-gray-900 text-white rounded-lg py-3 text-sm font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {status === "loading"
-                ? mode === "login" ? "登录中..." : "注册中..."
-                : mode === "login" ? "登录 →" : "注册 →"}
+              {status === "loading" ? "登录中..." : "登录 →"}
             </button>
           </form>
         )}
@@ -222,27 +205,10 @@ export default function LoginPage() {
         {/* 切换登录/注册 */}
         {mode !== "forgot" && (
           <p className="mt-6 text-center text-sm text-gray-400">
-            {mode === "login" ? (
-              <>
-                还没有账号？{" "}
-                <button
-                  onClick={() => switchMode("signup")}
-                  className="text-gray-900 hover:underline font-medium"
-                >
-                  注册
-                </button>
-              </>
-            ) : (
-              <>
-                已有账号？{" "}
-                <button
-                  onClick={() => switchMode("login")}
-                  className="text-gray-900 hover:underline font-medium"
-                >
-                  登录
-                </button>
-              </>
-            )}
+            还没有账号？{" "}
+            <a href="/register" className="text-gray-900 hover:underline font-medium">
+              免费注册
+            </a>
           </p>
         )}
       </div>

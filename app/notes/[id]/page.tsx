@@ -91,6 +91,7 @@ export default function NoteDetailPage() {
   const [inReview, setInReview] = useState<boolean | null>(null); // null = 查询中
   const [reviewPlanId, setReviewPlanId] = useState<string | null>(null);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -147,23 +148,35 @@ export default function NoteDetailPage() {
   const handleAddReview = async () => {
     if (!userId || reviewLoading) return;
     setReviewLoading(true);
+    setReviewError(null);
     const { data, error: err } = await supabase
       .from("review_plans")
       .insert({ source_note_id: noteId, user_id: userId, status: "active" })
       .select("id")
       .single();
-    if (!err && data) { setInReview(true); setReviewPlanId(data.id); }
+    if (err || !data) {
+      setReviewError("加入复习计划失败，请稍后重试");
+    } else {
+      setInReview(true);
+      setReviewPlanId(data.id);
+    }
     setReviewLoading(false);
   };
 
   const handleCancelReview = async () => {
     if (!reviewPlanId || reviewLoading) return;
     setReviewLoading(true);
+    setReviewError(null);
     const { error: err } = await supabase
       .from("review_plans")
       .update({ status: "inactive" })
       .eq("id", reviewPlanId);
-    if (!err) { setInReview(false); setReviewPlanId(null); }
+    if (err) {
+      setReviewError("取消复习计划失败，请稍后重试");
+    } else {
+      setInReview(false);
+      setReviewPlanId(null);
+    }
     setReviewLoading(false);
   };
 
@@ -316,6 +329,14 @@ export default function NoteDetailPage() {
                   {note.tags.map((tag, i) => (
                     <span key={i} className="text-xs text-gray-300">#{tag}</span>
                   ))}
+                </div>
+              )}
+
+              {/* 复习操作错误提示 */}
+              {reviewError && (
+                <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-sm text-red-600">
+                  <span>{reviewError}</span>
+                  <button onClick={() => setReviewError(null)} className="text-red-400 hover:text-red-600 text-lg leading-none">×</button>
                 </div>
               )}
 
