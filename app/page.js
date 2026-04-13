@@ -12,6 +12,7 @@ const DEMO_URL = 'https://arxiv.org/abs/attention-is-all-you-need';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userCount, setUserCount] = useState(null);
+  const [latestPosts, setLatestPosts] = useState([]);
   const [demoState, setDemoState] = useState('typing'); // 'typing' | 'loading' | 'done'
   const [typedText, setTypedText] = useState('');
 
@@ -34,6 +35,14 @@ export default function Home() {
     fetch(`${API_URL}/stats`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data?.user_count) setUserCount(data.user_count); })
+      .catch(() => {});
+    fetch(`${API_URL}/blog/posts`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const list = Array.isArray(data) ? data : (data.posts ?? []);
+        setLatestPosts(list.slice(0, 3));
+      })
       .catch(() => {});
   }, []);
 
@@ -418,6 +427,30 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* 最新文章 */}
+      {latestPosts.length > 0 && (
+        <section style={{ maxWidth: 1100, margin: '0 auto', padding: '64px 40px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 28 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: 'rgba(0,0,0,0.87)', margin: 0, letterSpacing: '-0.5px' }}>最新文章</h2>
+            <Link href="/blog" style={{ fontSize: 13, color: '#6b6b6b', textDecoration: 'none' }}>全部 →</Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {latestPosts.map((post) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid rgba(0,0,0,0.06)', textDecoration: 'none', gap: 16 }}
+              >
+                <span style={{ fontSize: 14, color: 'rgba(0,0,0,0.75)', fontWeight: 500, lineHeight: 1.5 }}>{post.title}</span>
+                <span style={{ fontSize: 12, color: '#aaa', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {new Date(post.published_at).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section style={{ background: '#0D1117', padding: '80px 40px', textAlign: 'center' }}>
