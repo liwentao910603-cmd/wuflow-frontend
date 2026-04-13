@@ -22,6 +22,31 @@ interface Feedback {
   created_at: string;
 }
 
+interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  tags: string[] | null;
+  cover_image: string | null;
+  status: "draft" | "published";
+  published_at: string | null;
+  created_at: string;
+}
+
+interface PostForm {
+  slug: string;
+  title: string;
+  summary: string;
+  content: string;
+  tags: string;
+  status: "draft" | "published";
+}
+
+const EMPTY_FORM: PostForm = {
+  slug: "", title: "", summary: "", content: "", tags: "", status: "draft",
+};
+
 const TYPE_LABEL: Record<string, { label: string; bg: string; color: string }> = {
   bug:     { label: "🐛 Bug",   bg: "#fef2f2", color: "#dc2626" },
   feature: { label: "✨ 建议",  bg: "#f0fdf4", color: "#16a34a" },
@@ -34,7 +59,9 @@ function formatDate(iso: string) {
   });
 }
 
-function StatCard({ icon, label, value, unit, large }: { icon: string; label: string; value: number | string; unit?: string; large?: boolean }) {
+function StatCard({ icon, label, value, unit, large }: {
+  icon: string; label: string; value: number | string; unit?: string; large?: boolean;
+}) {
   return (
     <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "20px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div style={{ fontSize: 20, marginBottom: 10 }}>{icon}</div>
@@ -63,6 +90,34 @@ export default function AdminPage() {
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Blog state
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [blogLoading, setBlogLoading] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editSlug, setEditSlug] = useState<string | null>(null); // null = new post
+  const [form, setForm] = useState<PostForm>(EMPTY_FORM);
+  const [formLoading, setFormLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [deletingSlug, setDeletingSlug] = useState<string | null>(null);
+
+  const fetchBlogPosts = useCallback(async (pw: string) => {
+    setBlogLoading(true);
+    try {
+      const res = await fetch(`${API}/blog/admin/posts`, {
+        headers: { "X-Admin-Password": pw },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBlogPosts(data.posts || []);
+      }
+    } catch {
+      // 静默失败，不影响其他功能
+    } finally {
+      setBlogLoading(false);
+    }
+  }, []);
+
   const fetchData = useCallback(async (pw: string) => {
     setDataLoading(true);
     setDataError("");
@@ -88,17 +143,17 @@ export default function AdminPage() {
     }
   }, []);
 
-  // 从 sessionStorage 恢复验证状态 + 启动 30s 自动刷新
   useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (saved) {
       setStoredPw(saved);
       setAuthed(true);
       fetchData(saved);
+      fetchBlogPosts(saved);
       intervalRef.current = setInterval(() => fetchData(saved), 30000);
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [fetchData]);
+  }, [fetchData, fetchBlogPosts]);
 
   const handleAuth = async () => {
     if (!password.trim()) return;
@@ -119,7 +174,6 @@ export default function AdminPage() {
       setAuthed(true);
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = setInterval(() => fetchData(password), 30000);
-      // 单独拉反馈
       const fbRes = await fetch(`${API}/admin/feedback`, {
         headers: { "X-Admin-Password": password },
       });
@@ -128,6 +182,7 @@ export default function AdminPage() {
         const list: Feedback[] = Array.isArray(fbData) ? fbData : (fbData.feedbacks || []);
         setFeedbacks(list);
       }
+      fetchBlogPosts(password);
     } catch {
       setAuthError("请求失败，请检查网络");
     } finally {
@@ -141,8 +196,98 @@ export default function AdminPage() {
     setAuthed(false);
     setStats(null);
     setFeedbacks([]);
+    setBlogPosts([]);
     setLastUpdated("");
     setPassword("");
+  };
+
+  const openNewPost = () => {
+    setEditSlug(null);
+    setForm(EMPTY_FORM);
+    setSaveError("");
+    setShowEditor(true);
+  };
+
+  const openEditPost = async (slug: string) => {
+    setEditSlug(slug);
+    setForm(EMPTY_FORM);
+    setSaveError("");
+    setFormLoading(true);
+    setShowEditor(true);
+    try {
+      const res = await fetch(`${API}/blog/admin/posts/${slug}`, {
+        headers: { "X-Admin-Password": storedPw },
+      });
+      if (res.ok) {
+        const post = await res.json();
+        setForm({
+          slug: post.slug,
+          title: post.title,
+          summary: post.summary || "",
+          content: post.content || "",
+          tags: (post.tags || []).join(", "),
+          status: post.status,
+        });
+      }
+    } catch {
+      setSaveError("加载文章内容失败");
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!form.slug.trim() || !form.title.trim()) {
+      setSaveError("slug 和标题为必填项");
+      return;
+    }
+    setSaving(true);
+    setSaveError("");
+    const payload = {
+      slug: form.slug.trim(),
+      title: form.title.trim(),
+      summary: form.summary.trim(),
+      content: form.content,
+      tags: form.tags ? form.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
+      status: form.status,
+    };
+    try {
+      const isNew = editSlug === null;
+      const url = isNew ? `${API}/blog/posts` : `${API}/blog/posts/${editSlug}`;
+      const method = isNew ? "POST" : "PUT";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json", "X-Admin-Password": storedPw },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setSaveError((err as { detail?: string }).detail || "保存失败");
+        return;
+      }
+      setShowEditor(false);
+      fetchBlogPosts(storedPw);
+    } catch {
+      setSaveError("网络错误，请重试");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (slug: string, title: string) => {
+    if (!confirm(`确认删除文章「${title}」？此操作不可恢复。`)) return;
+    setDeletingSlug(slug);
+    try {
+      await fetch(`${API}/blog/posts/${slug}`, {
+        method: "DELETE",
+        headers: { "X-Admin-Password": storedPw },
+      });
+      setBlogPosts(prev => prev.filter(p => p.slug !== slug));
+    } catch {
+      // 失败静默处理
+    } finally {
+      setDeletingSlug(null);
+    }
   };
 
   const s = { fontFamily: "'Inter','system-ui',sans-serif", minHeight: "100vh", background: "#f8fafc" };
@@ -186,6 +331,8 @@ export default function AdminPage() {
   // ── 后台主页 ──────────────────────────────────────────────
   return (
     <div style={s}>
+
+
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 24px" }}>
 
         {/* 顶栏 */}
@@ -198,7 +345,7 @@ export default function AdminPage() {
             </p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={() => fetchData(storedPw)} disabled={dataLoading}
+            <button onClick={() => { fetchData(storedPw); fetchBlogPosts(storedPw); }} disabled={dataLoading}
               style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", background: "#fff", fontSize: 13, color: "#6b6b6b", cursor: "pointer" }}>
               {dataLoading ? "刷新中..." : "🔄 刷新"}
             </button>
@@ -273,7 +420,6 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* 域名到期 */}
             {[
               { domain: "wuflow.cn",     note: "主域名，到期日期：2027年3月21日" },
               { domain: "wuflow.top",    note: "备用域名，到期日期：2027年3月21日" },
@@ -288,7 +434,6 @@ export default function AdminPage() {
               </div>
             ))}
 
-            {/* Vercel */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
               <span style={{ fontSize: 18 }}>▲</span>
               <div>
@@ -303,7 +448,7 @@ export default function AdminPage() {
         </div>
 
         {/* 最近反馈 */}
-        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "24px", marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
           <h2 style={{ fontSize: 15, fontWeight: 600, color: "rgba(0,0,0,0.87)", margin: "0 0 16px" }}>最近反馈</h2>
           {dataLoading ? (
             <div style={{ textAlign: "center", padding: "32px 0", color: "#a0a0a0", fontSize: 13 }}>加载中...</div>
@@ -339,6 +484,201 @@ export default function AdminPage() {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* 博客管理 */}
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: "rgba(0,0,0,0.87)", margin: 0 }}>博客管理</h2>
+            <button
+              onClick={openNewPost}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#111", color: "#fff", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
+            >
+              + 新文章
+            </button>
+          </div>
+          {/* ── 内联编辑器 ── */}
+          {showEditor && (
+            <div style={{ background: "#f8fafc", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: 20, marginBottom: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "rgba(0,0,0,0.87)" }}>
+                  {editSlug === null ? "新文章" : `编辑：${editSlug}`}
+                </span>
+                <button onClick={() => setShowEditor(false)} style={{ background: "none", border: "none", fontSize: 18, color: "#a0a0a0", cursor: "pointer", lineHeight: 1 }}>✕</button>
+              </div>
+
+              {formLoading ? (
+                <div style={{ textAlign: "center", padding: "32px 0", color: "#a0a0a0", fontSize: 13 }}>加载中...</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+                  {/* slug + status */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 140px", gap: 12 }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "#6b6b6b", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                        Slug <span style={{ color: "#dc2626" }}>*</span>
+                      </span>
+                      <input
+                        value={form.slug}
+                        onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
+                        placeholder="my-article-slug"
+                        disabled={editSlug !== null}
+                        style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 7, padding: "8px 11px", fontSize: 13, outline: "none", background: editSlug !== null ? "#f1f5f9" : "#fff", color: editSlug !== null ? "#a0a0a0" : "inherit" }}
+                      />
+                    </label>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "#6b6b6b", textTransform: "uppercase", letterSpacing: "0.3px" }}>状态</span>
+                      <select
+                        value={form.status}
+                        onChange={e => setForm(f => ({ ...f, status: e.target.value as "draft" | "published" }))}
+                        style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 7, padding: "8px 11px", fontSize: 13, outline: "none", background: "#fff", cursor: "pointer" }}
+                      >
+                        <option value="draft">草稿</option>
+                        <option value="published">已发布</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  {/* title */}
+                  <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#6b6b6b", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                      标题 <span style={{ color: "#dc2626" }}>*</span>
+                    </span>
+                    <input
+                      value={form.title}
+                      onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                      placeholder="文章标题"
+                      style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 7, padding: "8px 11px", fontSize: 14, outline: "none", background: "#fff" }}
+                    />
+                  </label>
+
+                  {/* summary */}
+                  <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#6b6b6b", textTransform: "uppercase", letterSpacing: "0.3px" }}>摘要</span>
+                    <textarea
+                      value={form.summary}
+                      onChange={e => setForm(f => ({ ...f, summary: e.target.value }))}
+                      placeholder="150 字以内的摘要"
+                      rows={3}
+                      style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 7, padding: "8px 11px", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit", background: "#fff" }}
+                    />
+                  </label>
+
+                  {/* tags */}
+                  <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#6b6b6b", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                      Tags <span style={{ fontSize: 11, color: "#a0a0a0", fontWeight: 400, textTransform: "none" }}>逗号分隔</span>
+                    </span>
+                    <input
+                      value={form.tags}
+                      onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
+                      placeholder="学习方法, AI, 知识管理"
+                      style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 7, padding: "8px 11px", fontSize: 13, outline: "none", background: "#fff" }}
+                    />
+                  </label>
+
+                  {/* content */}
+                  <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#6b6b6b", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                      正文 <span style={{ fontSize: 11, color: "#a0a0a0", fontWeight: 400, textTransform: "none" }}>Markdown</span>
+                    </span>
+                    <textarea
+                      value={form.content}
+                      onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                      placeholder={"## 标题\n\n正文内容..."}
+                      rows={20}
+                      style={{ border: "1px solid rgba(0,0,0,0.12)", borderRadius: 7, padding: "8px 11px", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "monospace", lineHeight: 1.6, background: "#fff" }}
+                    />
+                  </label>
+
+                  {saveError && (
+                    <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 6, padding: "9px 13px", fontSize: 13, color: "#dc2626" }}>
+                      {saveError}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                    <button
+                      onClick={() => setShowEditor(false)}
+                      style={{ padding: "9px 18px", borderRadius: 7, border: "1px solid rgba(0,0,0,0.12)", background: "#fff", fontSize: 13, color: "#6b6b6b", cursor: "pointer" }}
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      style={{ padding: "9px 22px", borderRadius: 7, border: "none", background: saving ? "rgba(0,0,0,0.08)" : "#111", color: saving ? "#a0a0a0" : "#fff", fontSize: 13, fontWeight: 500, cursor: saving ? "not-allowed" : "pointer" }}
+                    >
+                      {saving ? "保存中..." : "保存"}
+                    </button>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          )}
+
+          {blogLoading ? (
+            <div style={{ textAlign: "center", padding: "32px 0", color: "#a0a0a0", fontSize: 13 }}>加载中...</div>
+          ) : blogPosts.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "32px 0", color: "#a0a0a0", fontSize: 13 }}>暂无文章，点击「+ 新文章」创建</div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                    {["标题", "状态", "发布时间", "操作"].map(h => (
+                      <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontWeight: 600, color: "#6b6b6b", fontSize: 11, letterSpacing: "0.3px", textTransform: "uppercase" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {blogPosts.map(post => (
+                    <tr key={post.id} style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+                      <td style={{ padding: "12px 12px" }}>
+                        <button
+                          onClick={() => openEditPost(post.slug)}
+                          style={{ background: "none", border: "none", padding: 0, fontSize: 13, color: "rgba(0,0,0,0.87)", fontWeight: 500, cursor: "pointer", textAlign: "left" }}
+                        >
+                          {post.title}
+                        </button>
+                        <div style={{ fontSize: 11, color: "#a0a0a0", marginTop: 2 }}>{post.slug}</div>
+                      </td>
+                      <td style={{ padding: "12px 12px" }}>
+                        <span style={{
+                          fontSize: 11, padding: "2px 8px", borderRadius: 99, fontWeight: 600,
+                          background: post.status === "published" ? "#f0fdf4" : "#f8fafc",
+                          color: post.status === "published" ? "#16a34a" : "#6b7280",
+                        }}>
+                          {post.status === "published" ? "已发布" : "草稿"}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 12px", color: "#6b6b6b", whiteSpace: "nowrap" }}>
+                        {post.published_at ? formatDate(post.published_at) : "—"}
+                      </td>
+                      <td style={{ padding: "12px 12px" }}>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            onClick={() => openEditPost(post.slug)}
+                            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid rgba(0,0,0,0.12)", background: "#fff", fontSize: 12, color: "#6b6b6b", cursor: "pointer" }}
+                          >
+                            编辑
+                          </button>
+                          <button
+                            onClick={() => handleDelete(post.slug, post.title)}
+                            disabled={deletingSlug === post.slug}
+                            style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#fee2e2", fontSize: 12, color: "#dc2626", cursor: deletingSlug === post.slug ? "not-allowed" : "pointer" }}
+                          >
+                            {deletingSlug === post.slug ? "删除中" : "删除"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
