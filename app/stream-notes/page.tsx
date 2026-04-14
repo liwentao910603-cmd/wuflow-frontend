@@ -67,7 +67,8 @@ export default function StreamNotesPage() {
       });
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
-      setNotes(data.notes || data || []);
+      const list = Array.isArray(data) ? data : (data.notes ?? data.data ?? []);
+      setNotes(Array.isArray(list) ? list : []);
     } catch (e: unknown) {
       setError("加载失败，请刷新重试");
       console.error(e);
