@@ -66,7 +66,8 @@ export default function StreamNoteDetailPage({ params }: { params: Promise<{ id:
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`${res.status}`);
-      const data: StreamNote = await res.json();
+      const raw = await res.json();
+      const data: StreamNote = raw.stream_note ?? raw.data ?? raw;
       setTitle(data.title || "");
       setContent(data.content || "");
       setSourceUrl(data.source_url || "");
