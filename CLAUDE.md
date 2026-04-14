@@ -1,113 +1,118 @@
-# 角色：前端工程师
+# WuFlow Frontend - Claude Code Context
 
-## 你的身份
-你是 WuFlow 的前端工程师，负责 Next.js 应用、UI/UX 设计和 Vercel 部署。
-你代表用户的声音——每个功能都要从"用户会怎么操作"出发。
+## 产品定位
+「让人真正学会的学习伙伴」——核心动词是「学」「懂」「连接」，不是「存」和「搜」。
 
 ## 技术栈
-- **框架**：Next.js（Vercel 部署）
-- **域名**：www.wuflow.cn
-- **设计风格**：Notion 风格白色主题，`#2383E2` 蓝色强调色
+- **框架**：Next.js 16（App Router）
+- **样式**：Tailwind CSS，Notion 风格白底，`#2383E2` 蓝色强调色
+- **字体**：Inter + Noto Sans SC
+- **部署**：Vercel，`git push` 自动触发部署
+- **域名**：wuflow.cn
+- **后端 API**：api.wuflow.cn（开发时 localhost:9000）
 - **GitHub**：liwentao910603-cmd/wuflow-frontend
-- **后端 API**：阿里云 上的 FastAPI，端口 9000
 
-## 设计原则
-- 简洁、专注、无干扰——目标用户是知识工作者
-- 移动端友好（中国用户大量使用手机）
-- 加载状态、错误提示必须完善（不能白屏报错）
-- 隐私感：让用户感觉"这是我的私人知识空间"
-- 操作反馈要及时：上传进度、处理状态要可见
+## 本地路径
+```
+C:\Users\72719\wuflow\frontend
+```
 
-## 你的行为准则
-- 每个新页面/组件先问：这对用户学习体验有什么改善？
-- 对接 API 前先检查 shared/api-spec.md 中的接口文档
-- 完成功能后在 shared/tasks.md 更新状态
-- 发现 UX 问题时，主动提出改进方案（不只是实现需求）
-- 付费墙的设计要自然，不要突兀
-
-## 与其他角色协作
-- 需要新 API 时，先在 shared/tasks.md 描述需求，等后端确认后再开发
-- 收到运营/Vlog 的推广需求时，评估实现成本并给出时间估算
-- 关注运营提出的用户反馈，转化为 UI 优化方向
-
-## 输出格式
-发言时使用：**[前端]** UI 方案/组件代码/交互设计...
-
-# WuFlow Frontend - Project Context for Claude Code
-
-## Project Overview
-WuFlow (悟流) frontend - AI-powered knowledge management tool for self-learners.
-Solo indie project by Leo (怪仔), targeting Chinese self-learners.
-Live at: https://wuflow.cn (deployed on Vercel)
-
-## Tech Stack
-- **Framework**: Next.js (App Router)
-- **Styling**: Tailwind CSS, Notion风格（白底、简洁）
-- **Deployment**: Vercel
-- **Backend API**: FastAPI at localhost:9000 (dev) / 待部署服务器 (prod)
-- **GitHub**: liwentao910603-cmd/wuflow-frontend
-
-## Directory Structure
+## 目录结构
 ```
 frontend/
+├── components/
+│   └── Sidebar.tsx
 ├── app/
-│   ├── page.js              # 落地页（白底 Notion 风格）
-│   ├── ingest/
-│   │   └── page.tsx         # 资料整理页（URL / PDF拖拽 / 文本 三Tab）
+│   ├── page.js                        # 落地页
+│   ├── login/page.tsx                 # 登录页
+│   ├── dashboard/
+│   │   ├── page.tsx                   # 仪表盘（热力图入口）
+│   │   └── CheckinModal.tsx           # 学习打卡弹窗
+│   ├── ingest/page.tsx                # 资料整理（URL/PDF/文本，两步生成）
 │   ├── notes/
-│   │   └── page.tsx         # 知识库列表页
-│   └── qa/
-│       └── page.tsx         # 知识库问答页（RAG + 来源引用）
-├── public/
-├── .env.local               # 环境变量（never commit）
-└── package.json
+│   │   ├── page.tsx                   # 知识库列表（含概念标签、删除、加入复习）
+│   │   └── [id]/page.tsx              # 笔记详情页（含相关笔记推荐）
+│   ├── concepts/
+│   │   ├── page.tsx                   # 概念库列表页
+│   │   └── [term]/page.tsx            # 概念 Wiki 详情页
+│   ├── qa/page.tsx                    # AI 问答（流式输出+来源引用）
+│   ├── review/page.tsx                # 遗忘曲线复习
+│   ├── study-stats/page.tsx           # 知识雷达图+盲点诊断
+│   └── admin/page.tsx                 # 运营后台（密码：wuflow2026）
 ```
 
-## Key Environment Variables (.env.local)
+## 关键环境变量（.env.local，不可提交）
 ```
 NEXT_PUBLIC_API_URL=http://localhost:9000   # dev
-# prod 部署后改为服务器地址
+# prod 自动读取 api.wuflow.cn
 ```
 
-## Page Descriptions
+## 重要技术约定（必须遵守）
+- 页面跳转用 `window.location.href`，**不用** `router.push()`
+- Next.js 16 代理用 `proxy.ts`，**不是** `middleware.ts`
+- 不引入新 UI 组件库，保持轻量
+- API 地址统一从环境变量读取，不硬编码
+- 用户输入做基础 sanitize，不直接渲染到 DOM
 
-### page.js — 落地页
-- 白底 Notion 风格
-- 产品介绍 + CTA 入口
+## 各页面核心功能说明
 
-### ingest/page.tsx — 资料整理页（F1核心）
-- 三个 Tab：URL输入 / PDF拖拽上传 / 文本粘贴
-- 调用后端 POST /ingest
-- 返回 DeepSeek 生成的结构化笔记
+### ingest/page.tsx
+- 三 Tab：URL 输入 / PDF 拖拽 / 文本粘贴
+- 两步生成：先快速返回 title+summary（~3s），后台继续生成全文，前端轮询 `/notes/{id}/status`
+- 零整体刷新，进度可见
 
-### notes/page.tsx — 知识库列表页
-- 展示所有已入库的笔记
-- 从 Supabase 拉取，按 created_at 排序
-- 支持查看笔记详情
+### notes/[id]/page.tsx
+- 展示笔记详情
+- 底部展示相关笔记推荐（来自 `note_relations` 缓存表）
 
-### qa/page.tsx — 问答页（F3核心）
-- 输入问题 → 调用后端 RAG 接口
-- 返回答案 + 来源引用（source citation）
-- 对话式 UI
+### review/page.tsx
+- 遗忘曲线复习，题目来自 `cached_questions`（预生成缓存，快）
+- 支持自评打分，更新 `mastery_level`
 
-## Backend API Endpoints (FastAPI localhost:9000)
-- `POST /ingest` — URL/PDF/文本 → 生成结构化笔记存入 Supabase
-- `POST /qa` — 问题 → RAG 检索 → 返回答案+来源
+### study-stats/page.tsx
+- 顶部：GitHub 风格学习热力图
+- 底部：知识雷达图 + 盲点诊断
 
-## Design Principles
-- Notion 风格：白底、无多余装饰、字体清晰
-- 中文用户为主，文案用中文
-- 移动端适配（Tailwind 响应式）
-- 保持简洁，不过度设计
+### concepts/[term]/page.tsx
+- 概念 Wiki 详情，路由用 `{term:path}` 支持含斜杠的概念名
 
-## Development Principles
-1. 先读对应 page.tsx 再动手改
-2. API 地址统一从 env 读取，不硬编码
-3. 错误状态要有用户友好的提示（中文）
-4. 不引入新的 UI 组件库（保持轻量）
-5. 改动后在 localhost:3000 验证再提交
+### admin/page.tsx
+- 数据看板：用户数、今日新增、活跃度
+- 预警 + 用户反馈列表
 
-## 安全规范
-- 用户输入必须做基础 sanitize，不直接渲染到 DOM
-- API 调用统一走 /api/* 代理，不在前端暴露 key
-- 敏感操作（删除、修改）必须有二次确认
+## 已完成功能（不可破坏）
+- ✅ 用户认证（Supabase Auth）+ 侧边栏
+- ✅ 落地页、Dashboard
+- ✅ 资料整理（两步生成，轮询状态）
+- ✅ 知识库列表（删除、加入复习、概念标签）
+- ✅ AI 问答（流式输出+来源引用）
+- ✅ L1 学习打卡热力图
+- ✅ L2 遗忘曲线复习
+- ✅ L3 知识雷达图+盲点诊断
+- ✅ 1.6b 相关笔记推荐
+- ✅ 1.6c 概念 Wiki
+- ✅ 用户反馈弹窗（侧边栏入口）
+- ✅ 运营后台 /admin
+
+### 流记模块（已完成）
+- ✅ stream_notes 表 + RLS
+- ✅ 后端 CRUD 接口（GET列表/GET单条/POST/PUT/DELETE）
+- ✅ /stream-notes 列表页（时间流卡片，客户端渲染）
+- ✅ /stream-notes/[id] 详情/编辑页（支持标题、Markdown正文、来源链接、标签）
+- ✅ 侧边栏「流记」入口（PenLine图标）
+
+## 开发原则
+1. 改动前先读对应 page.tsx
+2. 每个新功能先问：对用户学习体验有什么改善？
+3. 加载状态、错误提示必须完善（不能白屏，错误文案用中文）
+4. 移动端友好（中国用户大量使用手机）
+5. 付费墙设计要自然，不突兀
+6. 改动后在 localhost:3000 验证再提交
+
+## 下一步开发（Tier 3）
+- Phase 1.5 L4：个性化学习路径推荐
+- Phase 1.5 L5：每周学习报告（Agent 驱动，图片导出 1080×1920px）
+
+## Phase 2 启动条件
+7日留存 >40% + 50个付费用户
+Phase 2 功能：视频 URL 处理、Pro 订阅（¥29/月）、模板市场
