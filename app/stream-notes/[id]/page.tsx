@@ -63,6 +63,7 @@ export default function StreamNoteDetailPage({ params }: { params: Promise<{ id:
     setError("");
     try {
       const res = await fetch(`${API}/stream-notes/${noteId}`, {
+        method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`${res.status}`);
