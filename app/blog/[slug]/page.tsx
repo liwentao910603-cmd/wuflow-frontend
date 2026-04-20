@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import ReactMarkdown from "react-markdown";
@@ -82,6 +83,7 @@ function readingMinutes(content: string) {
 }
 
 /* ── SSG ────────────────────────────────────────────────────────────── */
+export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
@@ -130,6 +132,8 @@ export default async function BlogPostPage(
   const { slug } = await params;
   const post = await getPost(slug);
 
+  if (!post) notFound();
+
   return (
     <div
       className="min-h-screen bg-white"
@@ -145,14 +149,7 @@ export default async function BlogPostPage(
         </Link>
       </nav>
 
-      {!post ? (
-        <div className="max-w-3xl mx-auto px-6 py-16 text-center py-32">
-          <p className="text-gray-400 text-sm mb-4">文章不存在或已被删除</p>
-          <Link href="/blog" className="text-sm text-gray-500 hover:text-gray-900 underline">
-            返回博客
-          </Link>
-        </div>
-      ) : (() => {
+      {(() => {
         const { bg, emoji } = tagStyle(post.tags);
         const mins = readingMinutes(post.content);
 
