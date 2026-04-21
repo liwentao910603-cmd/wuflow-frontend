@@ -40,7 +40,7 @@ async function getPost(slug: string): Promise<Post | null> {
   const url = `${API}/blog/posts/${slug}`;
   for (let attempt = 1; attempt <= 3; attempt++) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
+    const timer = setTimeout(() => controller.abort(), 10000);
     try {
       const res = await fetch(url, {
         next: { revalidate: 3600 },
@@ -57,6 +57,7 @@ async function getPost(slug: string): Promise<Post | null> {
         error: error instanceof Error ? error.message : String(error),
       });
       if (attempt === 3) return null;
+      await new Promise(r => setTimeout(r, 500));
     }
   }
   return null;
