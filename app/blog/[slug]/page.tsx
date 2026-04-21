@@ -62,23 +62,6 @@ async function getPost(slug: string): Promise<Post | null> {
   return null;
 }
 
-async function getAllSlugs(): Promise<string[]> {
-  try {
-    const res = await fetch(`${API}/blog/posts`, { next: { revalidate: 3600 } });
-    if (!res.ok) return [];
-    const data = await res.json();
-    const posts: Post[] = Array.isArray(data) ? data : (data.posts ?? []);
-    return posts.map((p) => p.slug);
-  } catch (error) {
-    console.error('[getAllSlugs] Failed to fetch:', {
-      url: `${API}/blog/posts`,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    return [];
-  }
-}
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("zh-CN", {
     year: "numeric",
@@ -94,9 +77,11 @@ function readingMinutes(content: string) {
 
 /* ── SSG ────────────────────────────────────────────────────────────── */
 export async function generateStaticParams() {
-  const slugs = await getAllSlugs();
-  return slugs.map((slug) => ({ slug }));
+  return [];
 }
+
+export const dynamicParams = true;
+export const revalidate = 3600;
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
