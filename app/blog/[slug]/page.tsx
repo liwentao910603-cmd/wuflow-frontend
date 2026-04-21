@@ -37,19 +37,29 @@ interface Post {
 }
 
 async function getPost(slug: string): Promise<Post | null> {
-  try {
-    const res = await fetch(`${API}/blog/posts/${slug}`, { next: { revalidate: 3600 } });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (error) {
-    console.error('[getPost] Failed to fetch:', {
-      slug,
-      url: `${API}/blog/posts/${slug}`,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    return null;
+  const url = `${API}/blog/posts/${slug}`;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    try {
+      const res = await fetch(url, {
+        next: { revalidate: 3600 },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (error) {
+      clearTimeout(timer);
+      console.error(`[getPost] Attempt ${attempt}/3 failed:`, {
+        slug,
+        url,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      if (attempt === 3) return null;
+    }
   }
+  return null;
 }
 
 async function getAllSlugs(): Promise<string[]> {
@@ -83,9 +93,6 @@ function readingMinutes(content: string) {
 }
 
 /* ── SSG ────────────────────────────────────────────────────────────── */
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-
 export async function generateStaticParams() {
   const slugs = await getAllSlugs();
   return slugs.map((slug) => ({ slug }));
